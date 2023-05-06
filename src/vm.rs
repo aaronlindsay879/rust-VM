@@ -101,6 +101,21 @@ impl VM {
             Opcode::HLT => {
                 println!("HLT encountered");
             }
+            Opcode::JMP => {
+                let target = self.registers[self.next_8_bits() as usize];
+
+                self.pc = target as usize;
+            }
+            Opcode::JMPF => {
+                let offset = self.registers[self.next_8_bits() as usize];
+
+                self.pc += offset as usize;
+            }
+            Opcode::JMPB => {
+                let offset = self.registers[self.next_8_bits() as usize];
+
+                self.pc -= offset as usize;
+            }
             _ => {
                 println!("Unrecognized opcode encountered");
             }
@@ -203,5 +218,33 @@ mod tests {
 
         assert_eq!(test_vm.registers[2], 2);
         assert_eq!(test_vm.remainder, 1);
+    }
+
+    #[test]
+    fn test_jmp_opcode() {
+        let mut test_vm = get_test_vm(vec![7, 0, 0, 0]);
+        test_vm.registers[0] = 0;
+        test_vm.run_once();
+
+        assert_eq!(test_vm.pc, 0);
+    }
+
+    #[test]
+    fn test_jmpf_opcode() {
+        let mut test_vm = get_test_vm(vec![8, 0, 0, 0, 6, 0, 0, 0]);
+        test_vm.registers[0] = 2;
+        test_vm.run_once();
+
+        assert_eq!(test_vm.pc, 4);
+    }
+
+    #[test]
+    fn test_jmpb_opcode() {
+        let mut test_vm = get_test_vm(vec![0, 0, 0, 10, 9, 1, 0, 0]);
+        test_vm.registers[1] = 6;
+        test_vm.run_once();
+        test_vm.run_once();
+
+        assert_eq!(test_vm.pc, 0);
     }
 }

@@ -19,6 +19,15 @@ pub enum Opcode {
     DIV,
     /// Halt
     HLT,
+    /// Jumps to location specified by value in register {REGISTER}\
+    /// JMP {REGISTER}
+    JMP,
+    /// Jumps forwards by the value specified in register {REG}\
+    /// JMPF {REGISTER}
+    JMPF,
+    /// Jumps backwards by the value specified in register {REG}\
+    /// JMPB {REGISTER}
+    JMPB,
     /// Illegal opcode
     IGL,
 }
@@ -32,6 +41,9 @@ impl From<u8> for Opcode {
             3 => Opcode::MUL,
             4 => Opcode::DIV,
             6 => Opcode::HLT,
+            7 => Opcode::JMP,
+            8 => Opcode::JMPF,
+            9 => Opcode::JMPB,
             _ => Opcode::IGL,
         }
     }
