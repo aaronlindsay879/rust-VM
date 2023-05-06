@@ -1,3 +1,5 @@
+mod instruction;
+mod opcode;
 mod vm;
 
 fn main() {
