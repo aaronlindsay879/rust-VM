@@ -336,6 +336,28 @@ mod tests {
         let mut out = Vec::with_capacity(PIE_HEADER_LENGTH);
 
         out.extend_from_slice(&PIE_HEADER_PREFIX);
+        out.extend_from_slice(&[
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            PIE_HEADER_LENGTH as u8,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            PIE_HEADER_LENGTH as u8,
+            0,
+            0,
+            0,
+            0,
+        ]);
         if out.len() < PIE_HEADER_LENGTH {
             out.resize(PIE_HEADER_LENGTH, 0);
         }
