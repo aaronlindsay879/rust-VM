@@ -74,9 +74,18 @@ pub enum Opcode {
     /// Jumps to location specified by value {VALUE} if equality register is false\
     /// DJMPNE {VALUE}
     DJMPNE,
-    /// Prints each byte from {VALUE} in data section until null byte reached
+    /// Prints each byte from {VALUE} until null byte reached
     /// PRTS {VALUE}
     PRTS,
+    /// Loads value in memory location {REG 1} and stores it in {REG 2}\
+    /// LOADM {REG 1} {REG 2}
+    LOADM,
+    /// Sets value in memory location {REG 1} to value in {REG 2}\
+    /// SETM {REG 1} {REG 2}
+    SETM,
+    /// Stores register into bytecode such that {16 BIT NUMBER} = {REGISTER}\
+    /// STORE {REGISTER} {16 bit number}
+    STORE,
     /// Illegal opcode
     IGL,
 }
@@ -109,6 +118,9 @@ impl From<u8> for Opcode {
             22 => Opcode::DJMPE,
             23 => Opcode::DJMPNE,
             24 => Opcode::PRTS,
+            25 => Opcode::LOADM,
+            26 => Opcode::SETM,
+            27 => Opcode::STORE,
             _ => Opcode::IGL,
         }
     }
@@ -142,6 +154,9 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             "djmpe" => Opcode::DJMPE,
             "djmpne" => Opcode::DJMPNE,
             "prts" => Opcode::PRTS,
+            "loadm" => Opcode::LOADM,
+            "setm" => Opcode::SETM,
+            "store" => Opcode::STORE,
             _ => Opcode::IGL,
         }
     }

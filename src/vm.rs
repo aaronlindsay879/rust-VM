@@ -9,6 +9,8 @@ pub struct VM {
     pc: usize,
     /// Program to be executed
     pub(crate) program: Vec<u8>,
+    /// Start of bytecode section
+    code_section_start: usize,
     /// Remainder from previous instruction
     remainder: u32,
     /// Equality from last comparison instruction
@@ -23,6 +25,7 @@ impl Default for VM {
             registers: [0; 32],
             pc: 0,
             program: vec![],
+            code_section_start: 0,
             remainder: 0,
             equality_flag: false,
             heap: vec![],
@@ -74,8 +77,10 @@ impl VM {
     pub fn run(&mut self) {
         // test header and then skip to code section
         if !self.verify_header() {}
-        let code_section = u32::from_be_bytes(self.program[16..20].try_into().unwrap());
-        self.pc = code_section as usize;
+        self.code_section_start =
+            u32::from_be_bytes(self.program[16..20].try_into().unwrap()) as usize;
+
+        self.pc = self.code_section_start;
 
         while self.execute_instruction() {}
     }
@@ -98,6 +103,12 @@ impl VM {
                 let number = self.next_16_bits();
 
                 self.registers[register] = number as i32;
+            }
+            Opcode::STORE => {
+                let register = self.next_register();
+                let location = self.next_16_bits() as usize;
+
+                self.program[location] = register as u8;
             }
             Opcode::ADD => {
                 let register_1 = self.next_register();
@@ -267,6 +278,30 @@ impl VM {
                     Ok(s) => println!("{s}"),
                     Err(e) => println!("Error decoding string: {e:?}"),
                 };
+
+                self.next_8_bits();
+            }
+            Opcode::LOADM => {
+                let location = self.next_register() as usize;
+                let data = {
+                    let slice = &self.heap[location..location + 4];
+                    i32::from_be_bytes(slice.try_into().unwrap())
+                };
+
+                *self.next_register_mut() = data;
+
+                self.next_8_bits();
+            }
+            Opcode::SETM => {
+                let location = self.next_register() as usize;
+                let data = self.next_register();
+
+                for (mem, byte) in self.heap[location..location + 4]
+                    .iter_mut()
+                    .zip(data.to_be_bytes())
+                {
+                    *mem = byte;
+                }
 
                 self.next_8_bits();
             }
