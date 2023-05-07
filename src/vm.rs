@@ -3,15 +3,15 @@ use crate::opcode::Opcode;
 /// Main virtual machine struct
 pub struct VM {
     /// CPU Registers
-    registers: [i32; 32],
+    pub(crate) registers: [i32; 32],
     /// Program counter - current byte being executed
     pc: usize,
     /// Program to be executed
-    program: Vec<u8>,
+    pub(crate) program: Vec<u8>,
     /// Remainder from previous instruction
     remainder: u32,
     /// Equality from last comparison instruction
-    equality_flag: bool,
+    pub(crate) equality_flag: bool,
 }
 
 impl Default for VM {
