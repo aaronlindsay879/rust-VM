@@ -54,6 +54,11 @@ pub enum Opcode {
     /// Jumps to location specified by value in register {REGISTER} if equality register is false\
     /// JMPNE {REGISTER}
     JMPNE,
+    /// Does nothing
+    NOP,
+    /// Extends size of heap by the value given in {REGISTER}\
+    /// ALOC {REGISTER}
+    ALOC,
     /// Illegal opcode
     IGL,
 }
@@ -78,6 +83,8 @@ impl From<u8> for Opcode {
             14 => Opcode::LT,
             15 => Opcode::JMPE,
             16 => Opcode::JMPNE,
+            17 => Opcode::NOP,
+            18 => Opcode::ALOC,
             _ => Opcode::IGL,
         }
     }
@@ -103,6 +110,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             "lt" => Opcode::LT,
             "jmpe" => Opcode::JMPE,
             "jmpne" => Opcode::JMPNE,
+            "nop" => Opcode::NOP,
+            "aloc" => Opcode::ALOC,
             _ => Opcode::IGL,
         }
     }

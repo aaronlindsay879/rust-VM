@@ -12,6 +12,8 @@ pub struct VM {
     remainder: u32,
     /// Equality from last comparison instruction
     pub(crate) equality_flag: bool,
+    /// Heap memory
+    heap: Vec<u8>,
 }
 
 impl Default for VM {
@@ -22,6 +24,7 @@ impl Default for VM {
             program: vec![],
             remainder: 0,
             equality_flag: false,
+            heap: vec![],
         }
     }
 }
@@ -185,6 +188,16 @@ impl VM {
                 if !self.equality_flag {
                     self.pc = target as usize;
                 }
+            }
+            Opcode::NOP => {
+                // eat next 3 bytes
+                self.next_8_bits();
+                self.next_8_bits();
+                self.next_8_bits();
+            }
+            Opcode::ALOC => {
+                let bytes = self.next_register();
+                self.heap.resize(self.heap.len() + bytes as usize, 0);
             }
             _ => {
                 println!("Unrecognized opcode encountered");
@@ -428,5 +441,13 @@ mod tests {
         test_vm.equality_flag = true;
         test_vm.run_once();
         assert_eq!(test_vm.pc, 2);
+    }
+
+    #[test]
+    fn test_aloc_opcode() {
+        let mut test_vm = get_test_vm(vec![18, 0, 0, 0]);
+        test_vm.registers[0] = 1024;
+        test_vm.run_once();
+        assert_eq!(test_vm.heap.len(), 1024);
     }
 }
