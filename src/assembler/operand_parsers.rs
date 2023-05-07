@@ -1,16 +1,23 @@
-use super::Token;
+use super::{register_parsers::register, Token};
 use nom::types::CompleteStr;
 #[allow(unused_imports)]
-use nom::{digit, do_parse, named, tag, ws};
+use nom::{alt, digit, do_parse, named, tag, ws};
 
 named!(
-    pub integer_operand<CompleteStr, Token>,
+    integer_operand<CompleteStr, Token>,
     ws!(
         do_parse!(
             tag!("#") >>
             value: digit >>
             ( Token::IntegerOperand { value: value.parse().unwrap() } )
         )
+    )
+);
+
+named!(pub operand<CompleteStr, Token>,
+    alt!(
+        integer_operand |
+        register
     )
 );
 

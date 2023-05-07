@@ -1,10 +1,13 @@
 use crate::assembler::program;
 use crate::vm::VM;
 use nom::types::CompleteStr;
+use nom::IResult;
 use std::fmt::UpperHex;
+use std::fs::File;
 use std::io;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::num::ParseIntError;
+use std::path::Path;
 
 #[derive(Default)]
 pub struct REPL {
@@ -59,9 +62,34 @@ impl REPL {
                     // runs VM until completion
                     self.vm.run();
                 }
-                ".runonce" => {
+                ".run_once" => {
                     // runs VM once
                     self.vm.run_once();
+                }
+                ".load_file" => {
+                    print!("file path: ");
+                    io::stdout().flush().expect("Couldn't flush stdout");
+
+                    let mut path = String::new();
+                    io::stdin()
+                        .read_line(&mut path)
+                        .expect("Couldn't read from stdin");
+                    let path = Path::new(path.trim());
+
+                    let mut file = File::open(path).expect("File not found");
+                    let mut file_content = String::new();
+                    file.read_to_string(&mut file_content)
+                        .expect("Couldn't read file");
+
+                    match program(CompleteStr(&file_content)) {
+                        Ok((_, program)) => self.vm.program.extend_from_slice(
+                            &program.to_bytes().expect("couldnt convert to bytecode"),
+                        ),
+                        Err(_) => {
+                            println!("Couldn't parse input program");
+                            continue;
+                        }
+                    }
                 }
                 _ => {
                     // tries and parses input, pushes to program, and executes once

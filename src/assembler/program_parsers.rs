@@ -50,10 +50,10 @@ mod tests {
             p,
             Program {
                 instructions: vec![AssemblerInstruction {
-                    opcode: Token::Op { code: Opcode::LOAD },
+                    opcode: Some(Token::Op { code: Opcode::LOAD }),
                     operand1: Some(Token::Register { reg_num: 0 }),
                     operand2: Some(Token::IntegerOperand { value: 100 }),
-                    operand3: None,
+                    ..Default::default()
                 }]
             }
         )
@@ -70,10 +70,11 @@ mod tests {
             p,
             Program {
                 instructions: vec![AssemblerInstruction {
-                    opcode: Token::Op { code: Opcode::ADD },
+                    opcode: Some(Token::Op { code: Opcode::ADD }),
                     operand1: Some(Token::Register { reg_num: 3 }),
                     operand2: Some(Token::Register { reg_num: 4 }),
-                    operand3: Some(Token::Register { reg_num: 5 })
+                    operand3: Some(Token::Register { reg_num: 5 }),
+                    ..Default::default()
                 }]
             }
         )
