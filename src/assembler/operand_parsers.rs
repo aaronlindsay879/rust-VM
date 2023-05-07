@@ -1,4 +1,4 @@
-use super::{register_parsers::register, Token};
+use super::{label_parsers::label_usage, register_parsers::register, Token};
 use nom::types::CompleteStr;
 #[allow(unused_imports)]
 use nom::{alt, digit, do_parse, named, tag, ws};
@@ -17,6 +17,7 @@ named!(
 named!(pub operand<CompleteStr, Token>,
     alt!(
         integer_operand |
+        label_usage |
         register
     )
 );

@@ -181,6 +181,10 @@ impl VM {
 
                 if self.equality_flag {
                     self.pc = target as usize;
+                } else {
+                    // otherwise pad
+                    self.next_8_bits();
+                    self.next_8_bits();
                 }
             }
             Opcode::JMPNE => {
@@ -188,6 +192,10 @@ impl VM {
 
                 if !self.equality_flag {
                     self.pc = target as usize;
+                } else {
+                    // otherwise pad
+                    self.next_8_bits();
+                    self.next_8_bits();
                 }
             }
             Opcode::NOP => {
@@ -209,6 +217,26 @@ impl VM {
                 *self.next_register_mut() -= 1;
                 self.next_8_bits();
                 self.next_8_bits();
+            }
+            Opcode::DJMPE => {
+                let target = self.next_16_bits();
+
+                if self.equality_flag {
+                    self.pc = target as usize;
+                } else {
+                    // otherwise pad
+                    self.next_8_bits();
+                }
+            }
+            Opcode::DJMPNE => {
+                let target = self.next_16_bits();
+
+                if !self.equality_flag {
+                    self.pc = target as usize;
+                } else {
+                    // otherwise pad
+                    self.next_8_bits();
+                }
             }
             _ => {
                 println!("Unrecognized opcode encountered");

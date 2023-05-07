@@ -1,18 +1,19 @@
 use crate::assembler::instruction_parser::{instruction, AssemblerInstruction};
+use crate::assembler::SymbolTable;
 use nom::types::CompleteStr;
 use nom::{do_parse, many1, named};
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
-    instructions: Vec<AssemblerInstruction>,
+    pub(crate) instructions: Vec<AssemblerInstruction>,
 }
 
 impl Program {
-    pub fn to_bytes(&self) -> Option<Vec<u8>> {
+    pub fn to_bytes(&self, symbols: &SymbolTable) -> Option<Vec<u8>> {
         let mut out = Vec::with_capacity(self.instructions.len() * 4);
 
         for inst in &self.instructions {
-            match inst.to_bytes() {
+            match inst.to_bytes(symbols) {
                 Ok(bytes) => out.extend_from_slice(&bytes),
                 Err(_) => return None,
             }
@@ -86,7 +87,7 @@ mod tests {
         assert_eq!(result.is_ok(), true);
 
         let (_, program) = result.unwrap();
-        let bytecode = program.to_bytes().unwrap();
+        let bytecode = program.to_bytes(&SymbolTable::new()).unwrap();
         assert_eq!(bytecode.len(), 4);
         println!("{:?}", bytecode);
     }

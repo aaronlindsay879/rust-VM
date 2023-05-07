@@ -36,20 +36,20 @@ pub enum Opcode {
     /// Stores the result of {REG 1} != {REG 2} in equality register\
     /// NEQ {REG 1} {REG 2}
     NEQ,
-    /// Stores the result of {REG 1} > {REG 2} in equality register\
-    /// GT {REG 1} {REG 2}
-    GTE,
-    /// Stores the result of {REG 1} <= {REG 2} in equality register\
-    /// LTE {REG 1} {REG 2}
-    GT,
-    /// Stores the result of {REG 1} < {REG 2} in equality register\
-    /// LT {REG 1} {REG 2}
-    LTE,
-    /// Jumps to location specified by value in register {REGISTER} if equality register is true\
-    /// JMPE {REGISTER}
-    LT,
     /// Stores the result of {REG 1} >= {REG 2} in equality register\
     /// GTE {REG 1} {REG 2}
+    GTE,
+    /// Stores the result of {REG 1} > {REG 2} in equality register\
+    /// GT {REG 1} {REG 2}
+    GT,
+    /// Stores the result of {REG 1} <= {REG 2} in equality register\
+    /// LTE {REG 1} {REG 2}
+    LTE,
+    /// Stores the result of {REG 1} < {REG 2} in equality register\
+    /// LT {REG 1} {REG 2}
+    LT,
+    /// Jumps to location specified by value in register {REGISTER} if equality register is true\
+    /// JMPE {REGISTER}
     JMPE,
     /// Jumps to location specified by value in register {REGISTER} if equality register is false\
     /// JMPNE {REGISTER}
@@ -65,6 +65,12 @@ pub enum Opcode {
     /// Decrements value of {REGISTER} by 1\
     /// DEC {REGISTER}
     DEC,
+    /// Jumps to location specified by value {VALUE} if equality register is true\
+    /// DJMPE {VALUE}
+    DJMPE,
+    /// Jumps to location specified by value {VALUE} if equality register is false\
+    /// DJMPNE {VALUE}
+    DJMPNE,
     /// Illegal opcode
     IGL,
 }
@@ -93,6 +99,8 @@ impl From<u8> for Opcode {
             18 => Opcode::ALOC,
             19 => Opcode::INC,
             20 => Opcode::DEC,
+            21 => Opcode::DJMPE,
+            22 => Opcode::DJMPNE,
             _ => Opcode::IGL,
         }
     }
@@ -122,6 +130,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             "aloc" => Opcode::ALOC,
             "inc" => Opcode::INC,
             "dec" => Opcode::DEC,
+            "djmpe" => Opcode::DJMPE,
+            "djmpne" => Opcode::DJMPNE,
             _ => Opcode::IGL,
         }
     }

@@ -1,4 +1,4 @@
-use crate::assembler::program;
+use crate::assembler::{program, Assembler, SymbolTable};
 use crate::vm::VM;
 use nom::types::CompleteStr;
 use nom::IResult;
@@ -18,6 +18,7 @@ pub struct REPL {
 impl REPL {
     /// Starts interactive REPL session
     pub fn run(&mut self) {
+        let mut assembler = Assembler::new();
         // buffer for user command
         let mut buffer = String::new();
         loop {
@@ -81,11 +82,9 @@ impl REPL {
                     file.read_to_string(&mut file_content)
                         .expect("Couldn't read file");
 
-                    match program(CompleteStr(&file_content)) {
-                        Ok((_, program)) => self.vm.program.extend_from_slice(
-                            &program.to_bytes().expect("couldnt convert to bytecode"),
-                        ),
-                        Err(_) => {
+                    match assembler.assemble(&file_content) {
+                        Some(bytes) => self.vm.program.extend_from_slice(&bytes),
+                        None => {
                             println!("Couldn't parse input program");
                             continue;
                         }
@@ -93,21 +92,9 @@ impl REPL {
                 }
                 _ => {
                     // tries and parses input, pushes to program, and executes once
-                    let parsed_program = program(CompleteStr(command));
-                    let bytecode = match parsed_program.is_ok() {
-                        true => {
-                            // if parses as a valid program, treat it as assembly
-                            let (_, result) = parsed_program.unwrap();
-                            let bytecode = result.to_bytes();
-                            match bytecode {
-                                None => {
-                                    println!("invalid command");
-                                    continue;
-                                }
-                                Some(bytes) => bytes,
-                            }
-                        }
-                        false => {
+                    let bytecode = match assembler.assemble(&command) {
+                        Some(bytes) => bytes,
+                        None => {
                             // otherwise treat as hex
                             match parse_hex(command) {
                                 Ok(bytes) => bytes,

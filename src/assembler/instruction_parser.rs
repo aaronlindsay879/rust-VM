@@ -1,4 +1,5 @@
 use super::{label_parsers::label_declaration, opcode_parsers::*, operand_parsers::*, Token};
+use crate::assembler::SymbolTable;
 use nom::types::CompleteStr;
 use nom::{alt, do_parse, many_m_n, multispace, named, opt};
 
@@ -13,7 +14,7 @@ pub struct AssemblerInstruction {
 }
 
 impl AssemblerInstruction {
-    pub fn to_bytes(&self) -> Result<Vec<u8>, &str> {
+    pub fn to_bytes(&self, symbols: &SymbolTable) -> Result<Vec<u8>, &str> {
         let mut out = Vec::with_capacity(4);
 
         // make sure opcode is actually an opcode
@@ -27,9 +28,12 @@ impl AssemblerInstruction {
                 match token {
                     Token::Register { reg_num } => out.push(*reg_num),
                     Token::IntegerOperand { value } => {
-                        let shortened = *value as u16;
-                        out.extend_from_slice(&shortened.to_be_bytes());
+                        out.extend_from_slice(&(*value as u16).to_be_bytes());
                     }
+                    Token::LabelUsage { name } => match symbols.symbol_value(name) {
+                        Some(value) => out.extend_from_slice(&(value as u16).to_be_bytes()),
+                        None => {}
+                    },
                     _ => return Err("Opcode in operand position"),
                 }
             }
@@ -40,6 +44,28 @@ impl AssemblerInstruction {
         }
 
         Ok(out)
+    }
+
+    pub fn is_label(&self) -> bool {
+        self.label.is_some()
+    }
+
+    pub fn is_opcode(&self) -> bool {
+        self.opcode.is_some()
+    }
+
+    pub fn is_directive(&self) -> bool {
+        self.directive.is_some()
+    }
+
+    pub fn label_name(&self) -> Option<String> {
+        match &self.label {
+            Some(l) => match l {
+                Token::LabelDeclaration { name } => Some(name.clone()),
+                _ => None,
+            },
+            None => None,
+        }
     }
 }
 
