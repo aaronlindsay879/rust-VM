@@ -9,6 +9,7 @@ mod register_parsers;
 use crate::assembler::instruction_parser::AssemblerInstruction;
 use crate::assembler::program_parsers::Program;
 use crate::opcode::Opcode;
+use crate::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
 use nom::types::CompleteStr;
 pub use program_parsers::program;
 
@@ -39,8 +40,13 @@ impl Assembler {
     pub fn assemble(&mut self, raw: &str) -> Option<Vec<u8>> {
         match program(CompleteStr(raw)) {
             Ok((_remainder, program)) => {
+                let mut assembled_program = self.write_pie_header();
+
                 self.process_first_phase(&program);
-                Some(self.process_second_phase(&program))
+                let body = self.process_second_phase(&program);
+                assembled_program.extend_from_slice(&body);
+
+                Some(assembled_program)
             }
             Err(e) => {
                 println!("failed {e}");
@@ -75,6 +81,17 @@ impl Assembler {
 
             position += 4;
         }
+    }
+
+    fn write_pie_header(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(PIE_HEADER_LENGTH);
+
+        out.extend_from_slice(&PIE_HEADER_PREFIX);
+        if out.len() < PIE_HEADER_LENGTH {
+            out.resize(PIE_HEADER_LENGTH, 0);
+        }
+
+        out
     }
 }
 
@@ -156,8 +173,8 @@ mod tests {
             "load $0 #100\nload $1 #1\nload $2 #0\ntest: inc $0\nneq $0 $2\njmpe @test\nhlt";
         let program = asm.assemble(test_string).unwrap();
         let mut vm = VM::default();
-        assert_eq!(program.len(), 24);
+        assert_eq!(program.len(), 28 + PIE_HEADER_LENGTH);
         vm.program.extend_from_slice(&program);
-        assert_eq!(vm.program.len(), 24);
+        assert_eq!(vm.program.len(), 28 + PIE_HEADER_LENGTH);
     }
 }

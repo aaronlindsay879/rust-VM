@@ -1,4 +1,5 @@
 use crate::opcode::Opcode;
+use crate::PIE_HEADER_PREFIX;
 
 /// Main virtual machine struct
 pub struct VM {
@@ -30,6 +31,10 @@ impl Default for VM {
 }
 
 impl VM {
+    fn verify_header(&self) -> bool {
+        self.program[0..4] == PIE_HEADER_PREFIX
+    }
+
     /// Decodes the opcode at the current PC, and increments PC by one
     fn decode_opcode(&mut self) -> Opcode {
         let opcode = Opcode::from(self.program[self.pc]);
@@ -67,6 +72,10 @@ impl VM {
 
     /// Runs VM until completion
     pub fn run(&mut self) {
+        // test header and then skip it
+        if !self.verify_header() {}
+        self.pc = 64;
+
         while self.execute_instruction() {}
     }
 
@@ -251,6 +260,7 @@ impl VM {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PIE_HEADER_LENGTH;
 
     fn get_test_vm(program: Vec<u8>) -> VM {
         let mut registers = [0; 32];
@@ -262,6 +272,18 @@ mod tests {
             program,
             ..Default::default()
         }
+    }
+
+    fn prepend_header(vm: &mut VM) {
+        let mut out = Vec::with_capacity(PIE_HEADER_LENGTH);
+
+        out.extend_from_slice(&PIE_HEADER_PREFIX);
+        if out.len() < PIE_HEADER_LENGTH {
+            out.resize(PIE_HEADER_LENGTH, 0);
+        }
+
+        out.extend_from_slice(&vm.program);
+        vm.program = out;
     }
 
     #[test]
@@ -279,10 +301,11 @@ mod tests {
             program: vec![5, 0, 0, 0],
             ..Default::default()
         };
+        prepend_header(&mut test_vm);
 
         test_vm.run();
 
-        assert_eq!(test_vm.pc, 1);
+        assert_eq!(test_vm.pc, 65);
     }
 
     #[test]
@@ -291,10 +314,11 @@ mod tests {
             program: vec![200, 0, 0, 0],
             ..Default::default()
         };
+        prepend_header(&mut test_vm);
 
         test_vm.run();
 
-        assert_eq!(test_vm.pc, 1);
+        assert_eq!(test_vm.pc, 65);
     }
 
     #[test]
@@ -303,6 +327,7 @@ mod tests {
             program: vec![0, 0, 1, 244],
             ..Default::default()
         };
+        prepend_header(&mut test_vm);
 
         test_vm.run();
 
@@ -312,6 +337,7 @@ mod tests {
     #[test]
     fn test_add_opcode() {
         let mut test_vm = get_test_vm(vec![1, 0, 1, 2]);
+        prepend_header(&mut test_vm);
         test_vm.run();
 
         assert_eq!(test_vm.registers[2], 15);
@@ -320,6 +346,7 @@ mod tests {
     #[test]
     fn test_sub_opcode() {
         let mut test_vm = get_test_vm(vec![2, 1, 0, 2]);
+        prepend_header(&mut test_vm);
         test_vm.run();
 
         assert_eq!(test_vm.registers[2], 5);
@@ -328,6 +355,7 @@ mod tests {
     #[test]
     fn test_mul_opcode() {
         let mut test_vm = get_test_vm(vec![3, 0, 1, 2]);
+        prepend_header(&mut test_vm);
         test_vm.run();
 
         assert_eq!(test_vm.registers[2], 50);
@@ -337,6 +365,7 @@ mod tests {
     fn test_div_opcode() {
         let mut test_vm = get_test_vm(vec![4, 1, 0, 2]);
         test_vm.registers[1] = 11;
+        prepend_header(&mut test_vm);
         test_vm.run();
 
         assert_eq!(test_vm.registers[2], 2);
@@ -480,7 +509,7 @@ mod tests {
         test_vm.registers[0] = 7;
         test_vm.equality_flag = true;
         test_vm.run_once();
-        assert_eq!(test_vm.pc, 2);
+        assert_eq!(test_vm.pc, 4);
     }
 
     #[test]
