@@ -111,7 +111,7 @@ fn pretty_print_hex<T: UpperHex>(bytes: &[T], size: usize) {
             }
             print!("\t");
         }
-        print!("\n");
+        println!();
     }
 
     io::stdout().flush().expect("Couldn't flush stdout");
@@ -120,7 +120,7 @@ fn pretty_print_hex<T: UpperHex>(bytes: &[T], size: usize) {
 /// Parses a hex string into a list of bytes, such as "00 01 03 E8"
 fn parse_hex(string: &str) -> Result<Vec<u8>, ParseIntError> {
     string
-        .split(" ")
-        .map(|hex_string| u8::from_str_radix(&hex_string, 16))
+        .split(' ')
+        .map(|hex_string| u8::from_str_radix(hex_string, 16))
         .collect()
 }

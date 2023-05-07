@@ -82,7 +82,7 @@ impl VM {
         match self.decode_opcode() {
             Opcode::LOAD => {
                 let register = self.next_8_bits() as usize;
-                let number = self.next_16_bits() as u16;
+                let number = self.next_16_bits();
 
                 self.registers[register] = number as i32;
             }
