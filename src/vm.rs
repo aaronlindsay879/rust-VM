@@ -223,7 +223,7 @@ mod tests {
     #[test]
     fn test_opcode_hlt() {
         let mut test_vm = VM {
-            program: vec![6, 0, 0, 0],
+            program: vec![5, 0, 0, 0],
             ..Default::default()
         };
 
@@ -292,7 +292,7 @@ mod tests {
 
     #[test]
     fn test_jmp_opcode() {
-        let mut test_vm = get_test_vm(vec![7, 0, 0, 0]);
+        let mut test_vm = get_test_vm(vec![6, 0, 0, 0]);
         test_vm.registers[0] = 0;
         test_vm.run_once();
 
@@ -301,7 +301,7 @@ mod tests {
 
     #[test]
     fn test_jmpf_opcode() {
-        let mut test_vm = get_test_vm(vec![8, 0, 0, 0, 6, 0, 0, 0]);
+        let mut test_vm = get_test_vm(vec![7, 0, 0, 0, 6, 0, 0, 0]);
         test_vm.registers[0] = 2;
         test_vm.run_once();
 
@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_jmpb_opcode() {
-        let mut test_vm = get_test_vm(vec![0, 0, 0, 10, 9, 1, 0, 0]);
+        let mut test_vm = get_test_vm(vec![0, 0, 0, 10, 8, 1, 0, 0]);
         test_vm.registers[1] = 6;
         test_vm.run_once();
         test_vm.run_once();
@@ -320,7 +320,7 @@ mod tests {
 
     #[test]
     fn test_eq_opcode() {
-        let mut test_vm = get_test_vm(vec![10, 0, 1, 0, 10, 0, 1, 0]);
+        let mut test_vm = get_test_vm(vec![9, 0, 1, 0, 9, 0, 1, 0]);
         test_vm.registers[0] = 10;
         test_vm.registers[1] = 10;
         test_vm.run_once();
@@ -333,7 +333,7 @@ mod tests {
 
     #[test]
     fn test_neq_opcode() {
-        let mut test_vm = get_test_vm(vec![11, 0, 1, 0, 11, 0, 1, 0]);
+        let mut test_vm = get_test_vm(vec![10, 0, 1, 0, 10, 0, 1, 0]);
         test_vm.registers[0] = 10;
         test_vm.registers[1] = 20;
         test_vm.run_once();
@@ -346,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_gte_opcode() {
-        let mut test_vm = get_test_vm(vec![12, 0, 1, 0, 12, 0, 1, 0, 12, 0, 1, 0]);
+        let mut test_vm = get_test_vm(vec![11, 0, 1, 0, 11, 0, 1, 0, 11, 0, 1, 0]);
         test_vm.registers[0] = 20;
         test_vm.registers[1] = 10;
         test_vm.run_once();
@@ -363,7 +363,7 @@ mod tests {
 
     #[test]
     fn test_gt_opcode() {
-        let mut test_vm = get_test_vm(vec![13, 0, 1, 0, 13, 0, 1, 0, 13, 0, 1, 0]);
+        let mut test_vm = get_test_vm(vec![12, 0, 1, 0, 12, 0, 1, 0, 12, 0, 1, 0]);
         test_vm.registers[0] = 20;
         test_vm.registers[1] = 10;
         test_vm.run_once();
@@ -380,7 +380,7 @@ mod tests {
 
     #[test]
     fn test_lte_opcode() {
-        let mut test_vm = get_test_vm(vec![14, 0, 1, 0, 14, 0, 1, 0, 14, 0, 1, 0]);
+        let mut test_vm = get_test_vm(vec![13, 0, 1, 0, 13, 0, 1, 0, 13, 0, 1, 0]);
         test_vm.registers[0] = 20;
         test_vm.registers[1] = 10;
         test_vm.run_once();
@@ -397,7 +397,7 @@ mod tests {
 
     #[test]
     fn test_lt_opcode() {
-        let mut test_vm = get_test_vm(vec![15, 0, 1, 0, 15, 0, 1, 0, 15, 0, 1, 0]);
+        let mut test_vm = get_test_vm(vec![14, 0, 1, 0, 14, 0, 1, 0, 14, 0, 1, 0]);
         test_vm.registers[0] = 20;
         test_vm.registers[1] = 10;
         test_vm.run_once();
@@ -414,7 +414,7 @@ mod tests {
 
     #[test]
     fn test_jmpe_opcode() {
-        let mut test_vm = get_test_vm(vec![16, 0, 0, 0, 17, 0, 0, 0, 17, 0, 0, 0]);
+        let mut test_vm = get_test_vm(vec![15, 0, 0, 0, 16, 0, 0, 0, 16, 0, 0, 0]);
         test_vm.registers[0] = 7;
         test_vm.equality_flag = true;
         test_vm.run_once();
@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn test_jmpne_opcode() {
-        let mut test_vm = get_test_vm(vec![17, 0, 0, 0, 17, 0, 0, 0, 17, 0, 0, 0]);
+        let mut test_vm = get_test_vm(vec![16, 0, 0, 0, 16, 0, 0, 0, 16, 0, 0, 0]);
         test_vm.registers[0] = 7;
         test_vm.equality_flag = true;
         test_vm.run_once();
