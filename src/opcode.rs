@@ -65,12 +65,18 @@ pub enum Opcode {
     /// Decrements value of {REGISTER} by 1\
     /// DEC {REGISTER}
     DEC,
+    /// Jumps to location specified by value {VALUE}\
+    /// DJMP {VALUE}
+    DJMP,
     /// Jumps to location specified by value {VALUE} if equality register is true\
     /// DJMPE {VALUE}
     DJMPE,
     /// Jumps to location specified by value {VALUE} if equality register is false\
     /// DJMPNE {VALUE}
     DJMPNE,
+    /// Prints each byte from {VALUE} in data section until null byte reached
+    /// PRTS {VALUE}
+    PRTS,
     /// Illegal opcode
     IGL,
 }
@@ -99,8 +105,10 @@ impl From<u8> for Opcode {
             18 => Opcode::ALOC,
             19 => Opcode::INC,
             20 => Opcode::DEC,
-            21 => Opcode::DJMPE,
-            22 => Opcode::DJMPNE,
+            21 => Opcode::DJMP,
+            22 => Opcode::DJMPE,
+            23 => Opcode::DJMPNE,
+            24 => Opcode::PRTS,
             _ => Opcode::IGL,
         }
     }
@@ -130,8 +138,10 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             "aloc" => Opcode::ALOC,
             "inc" => Opcode::INC,
             "dec" => Opcode::DEC,
+            "djmp" => Opcode::DJMP,
             "djmpe" => Opcode::DJMPE,
             "djmpne" => Opcode::DJMPNE,
+            "prts" => Opcode::PRTS,
             _ => Opcode::IGL,
         }
     }

@@ -72,9 +72,10 @@ impl VM {
 
     /// Runs VM until completion
     pub fn run(&mut self) {
-        // test header and then skip it
+        // test header and then skip to code section
         if !self.verify_header() {}
-        self.pc = 64;
+        let code_section = u32::from_be_bytes(self.program[16..20].try_into().unwrap());
+        self.pc = code_section as usize;
 
         while self.execute_instruction() {}
     }
@@ -227,6 +228,11 @@ impl VM {
                 self.next_8_bits();
                 self.next_8_bits();
             }
+            Opcode::DJMP => {
+                let target = self.next_16_bits();
+
+                self.pc = target as usize;
+            }
             Opcode::DJMPE => {
                 let target = self.next_16_bits();
 
@@ -246,6 +252,23 @@ impl VM {
                     // otherwise pad
                     self.next_8_bits();
                 }
+            }
+            Opcode::PRTS => {
+                let offset = self.next_16_bits() as usize;
+                let slice = self
+                    .program
+                    .iter()
+                    .skip(offset)
+                    .take_while(|&&byte| byte != 0)
+                    .copied()
+                    .collect::<Vec<_>>();
+
+                match std::str::from_utf8(&slice) {
+                    Ok(s) => println!("{s}"),
+                    Err(e) => println!("Error decoding string: {e:?}"),
+                };
+
+                self.next_8_bits();
             }
             _ => {
                 println!("Unrecognized opcode encountered");

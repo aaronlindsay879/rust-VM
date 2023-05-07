@@ -1,5 +1,5 @@
+use super::symbols::SymbolTable;
 use super::{label_parsers::label_declaration, opcode_parsers::*, operand_parsers::*, Token};
-use crate::assembler::SymbolTable;
 use nom::types::CompleteStr;
 use nom::{alt, do_parse, many_m_n, multispace, named, opt};
 
@@ -58,7 +58,32 @@ impl AssemblerInstruction {
         self.directive.is_some()
     }
 
-    pub fn label_name(&self) -> Option<String> {
+    /// Checks if the AssemblyInstruction has any operands at all
+    pub fn has_operands(&self) -> bool {
+        self.operand1.is_some() || self.operand2.is_some() || self.operand3.is_some()
+    }
+
+    pub fn get_directive_name(&self) -> Option<String> {
+        match &self.directive {
+            Some(d) => match d {
+                Token::Directive { name } => Some(name.to_string()),
+                _ => None,
+            },
+            None => None,
+        }
+    }
+
+    pub fn get_string_constant(&self) -> Option<String> {
+        match &self.operand1 {
+            Some(d) => match d {
+                Token::IrString { name } => Some(name.to_string()),
+                _ => None,
+            },
+            None => None,
+        }
+    }
+
+    pub fn get_label_name(&self) -> Option<String> {
         match &self.label {
             Some(l) => match l {
                 Token::LabelDeclaration { name } => Some(name.clone()),

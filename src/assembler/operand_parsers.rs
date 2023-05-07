@@ -1,7 +1,7 @@
 use super::{label_parsers::label_usage, register_parsers::register, Token};
 use nom::types::CompleteStr;
 #[allow(unused_imports)]
-use nom::{alt, digit, do_parse, named, tag, ws};
+use nom::{alt, digit, do_parse, named, tag, take_until, ws};
 
 named!(
     integer_operand<CompleteStr, Token>,
@@ -14,11 +14,21 @@ named!(
     )
 );
 
+named!(irstring<CompleteStr, Token>,
+    do_parse!(
+        tag!("'") >>
+        content: take_until!("'") >>
+        tag!("'") >>
+        ( Token::IrString { name: content.to_string() } )
+    )
+);
+
 named!(pub operand<CompleteStr, Token>,
     alt!(
         integer_operand |
         label_usage |
-        register
+        register |
+        irstring
     )
 );
 
@@ -36,5 +46,11 @@ mod tests {
 
         let result = integer_operand(CompleteStr("10"));
         assert_eq!(result.is_ok(), false);
+    }
+
+    #[test]
+    fn test_parse_string_operand() {
+        let result = irstring(CompleteStr("'This is a test'"));
+        assert_eq!(result.is_ok(), true);
     }
 }

@@ -1,7 +1,8 @@
+use super::symbols::SymbolTable;
+use crate::assembler::directive_parsers::directive;
 use crate::assembler::instruction_parser::{instruction, AssemblerInstruction};
-use crate::assembler::SymbolTable;
 use nom::types::CompleteStr;
-use nom::{do_parse, many1, named};
+use nom::{alt, do_parse, many1, named};
 
 #[derive(Debug, PartialEq)]
 pub struct Program {
@@ -25,7 +26,7 @@ impl Program {
 
 named!(pub program<CompleteStr, Program>,
     do_parse!(
-        instructions: many1!(instruction) >>
+        instructions: many1!(alt!(instruction | directive)) >>
         (
             Program {
                 instructions
@@ -90,5 +91,12 @@ mod tests {
         let bytecode = program.to_bytes(&SymbolTable::new()).unwrap();
         assert_eq!(bytecode.len(), 4);
         println!("{:?}", bytecode);
+    }
+
+    #[test]
+    fn test_complete_program() {
+        let test_program = CompleteStr(".data\nhello: .asciiz 'Hello everyone!'\n.code\nhlt");
+        let result = program(test_program);
+        assert_eq!(result.is_ok(), true);
     }
 }

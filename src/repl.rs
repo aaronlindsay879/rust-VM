@@ -1,7 +1,5 @@
-use crate::assembler::{program, Assembler, SymbolTable};
+use crate::assembler::Assembler;
 use crate::vm::VM;
-use nom::types::CompleteStr;
-use nom::IResult;
 use std::fmt::UpperHex;
 use std::fs::File;
 use std::io;
@@ -58,6 +56,7 @@ impl REPL {
                 ".reset" => {
                     // resets VM to default state
                     self.vm = VM::default();
+                    assembler = Assembler::new();
                 }
                 ".run" => {
                     // runs VM until completion
@@ -83,9 +82,9 @@ impl REPL {
                         .expect("Couldn't read file");
 
                     match assembler.assemble(&file_content) {
-                        Some(bytes) => self.vm.program.extend_from_slice(&bytes),
-                        None => {
-                            println!("Couldn't parse input program");
+                        Ok(bytes) => self.vm.program.extend_from_slice(&bytes),
+                        Err(e) => {
+                            println!("Couldn't parse input program: {e:?}");
                             continue;
                         }
                     }
@@ -93,8 +92,8 @@ impl REPL {
                 _ => {
                     // tries and parses input, pushes to program, and executes once
                     let bytecode = match assembler.assemble(&command) {
-                        Some(bytes) => bytes,
-                        None => {
+                        Ok(bytes) => bytes,
+                        Err(_) => {
                             // otherwise treat as hex
                             match parse_hex(command) {
                                 Ok(bytes) => bytes,
