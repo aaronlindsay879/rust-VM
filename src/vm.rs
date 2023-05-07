@@ -67,7 +67,7 @@ impl VM {
 
     /// Runs VM until completion
     pub fn run(&mut self) {
-        while !self.execute_instruction() {}
+        while self.execute_instruction() {}
     }
 
     /// Runs the VM, executing a single instruction
@@ -117,6 +117,7 @@ impl VM {
             }
             Opcode::HLT => {
                 println!("HLT encountered");
+                return false;
             }
             Opcode::JMP => {
                 let target = self.next_register();
@@ -199,8 +200,19 @@ impl VM {
                 let bytes = self.next_register();
                 self.heap.resize(self.heap.len() + bytes as usize, 0);
             }
+            Opcode::INC => {
+                *self.next_register_mut() += 1;
+                self.next_8_bits();
+                self.next_8_bits();
+            }
+            Opcode::DEC => {
+                *self.next_register_mut() -= 1;
+                self.next_8_bits();
+                self.next_8_bits();
+            }
             _ => {
                 println!("Unrecognized opcode encountered");
+                return false;
             }
         }
 
@@ -449,5 +461,19 @@ mod tests {
         test_vm.registers[0] = 1024;
         test_vm.run_once();
         assert_eq!(test_vm.heap.len(), 1024);
+    }
+
+    #[test]
+    fn test_inc_opcode() {
+        let mut test_vm = get_test_vm(vec![19, 0, 0, 0]);
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[0], 6);
+    }
+
+    #[test]
+    fn test_dec_opcode() {
+        let mut test_vm = get_test_vm(vec![20, 0, 0, 0]);
+        test_vm.run_once();
+        assert_eq!(test_vm.registers[0], 4);
     }
 }

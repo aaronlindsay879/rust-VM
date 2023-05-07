@@ -59,6 +59,12 @@ pub enum Opcode {
     /// Extends size of heap by the value given in {REGISTER}\
     /// ALOC {REGISTER}
     ALOC,
+    /// Increments value of {REGISTER} by 1\
+    /// INC {REGISTER}
+    INC,
+    /// Decrements value of {REGISTER} by 1\
+    /// DEC {REGISTER}
+    DEC,
     /// Illegal opcode
     IGL,
 }
@@ -85,6 +91,8 @@ impl From<u8> for Opcode {
             16 => Opcode::JMPNE,
             17 => Opcode::NOP,
             18 => Opcode::ALOC,
+            19 => Opcode::INC,
+            20 => Opcode::DEC,
             _ => Opcode::IGL,
         }
     }
@@ -112,6 +120,8 @@ impl<'a> From<CompleteStr<'a>> for Opcode {
             "jmpne" => Opcode::JMPNE,
             "nop" => Opcode::NOP,
             "aloc" => Opcode::ALOC,
+            "inc" => Opcode::INC,
+            "dec" => Opcode::DEC,
             _ => Opcode::IGL,
         }
     }

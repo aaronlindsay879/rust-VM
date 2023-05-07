@@ -33,6 +33,10 @@ impl AssemblerInstruction {
             }
         }
 
+        if out.len() < 4 {
+            out.resize(4, 0);
+        }
+
         Ok(out)
     }
 }
