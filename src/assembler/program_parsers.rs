@@ -1,4 +1,4 @@
-use crate::assembler::instruction_parser::{instruction_one, AssemblerInstruction};
+use crate::assembler::instruction_parser::{instruction, AssemblerInstruction};
 use nom::types::CompleteStr;
 use nom::{do_parse, many1, named};
 
@@ -24,7 +24,7 @@ impl Program {
 
 named!(pub program<CompleteStr, Program>,
     do_parse!(
-        instructions: many1!(instruction_one) >>
+        instructions: many1!(instruction) >>
         (
             Program {
                 instructions
@@ -40,7 +40,7 @@ mod tests {
     use crate::opcode::Opcode;
 
     #[test]
-    fn test_parse_program() {
+    fn test_parse_program_one() {
         let result = program(CompleteStr("load $0 #100\n"));
         assert_eq!(result.is_ok(), true);
 
@@ -54,6 +54,26 @@ mod tests {
                     operand1: Some(Token::Register { reg_num: 0 }),
                     operand2: Some(Token::IntegerOperand { value: 100 }),
                     operand3: None,
+                }]
+            }
+        )
+    }
+
+    #[test]
+    fn test_parse_program_two() {
+        let result = program(CompleteStr("add $3 $4 $ 5\n"));
+        assert_eq!(result.is_ok(), true);
+
+        let (leftover, p) = result.unwrap();
+        assert_eq!(leftover, CompleteStr(""));
+        assert_eq!(
+            p,
+            Program {
+                instructions: vec![AssemblerInstruction {
+                    opcode: Token::Op { code: Opcode::ADD },
+                    operand1: Some(Token::Register { reg_num: 3 }),
+                    operand2: Some(Token::Register { reg_num: 4 }),
+                    operand3: Some(Token::Register { reg_num: 5 })
                 }]
             }
         )

@@ -1,12 +1,13 @@
 use super::Token;
 use crate::opcode::Opcode;
 use nom::types::CompleteStr;
-use nom::{do_parse, named, tag_no_case};
+use nom::{alpha1, do_parse, named};
 
 named!(
-    pub opcode_load<CompleteStr, Token>,
+    pub opcode<CompleteStr, Token>,
     do_parse!(
-        tag_no_case!("load") >> (Token::Op { code: Opcode::LOAD })
+        opcode: alpha1 >>
+        ( Token::Op {code: Opcode::from(opcode)} )
     )
 );
 
@@ -16,13 +17,14 @@ mod tests {
 
     #[test]
     fn test_opcode_load() {
-        let result = opcode_load(CompleteStr("load"));
+        let result = opcode(CompleteStr("load"));
         assert_eq!(result.is_ok(), true);
         let (rest, token) = result.unwrap();
         assert_eq!(token, Token::Op { code: Opcode::LOAD });
         assert_eq!(rest, CompleteStr(""));
 
-        let result = opcode_load(CompleteStr("aold"));
-        assert_eq!(result.is_ok(), false);
+        let result = opcode(CompleteStr("aold"));
+        let (_, token) = result.unwrap();
+        assert_eq!(token, Token::Op { code: Opcode::IGL });
     }
 }

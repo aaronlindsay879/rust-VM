@@ -1,3 +1,5 @@
+use nom::types::CompleteStr;
+
 /// Opcodes for VM, 8 bits
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u8)]
@@ -81,6 +83,31 @@ impl From<u8> for Opcode {
     }
 }
 
+impl<'a> From<CompleteStr<'a>> for Opcode {
+    fn from(value: CompleteStr<'a>) -> Self {
+        match &value.to_lowercase()[..] {
+            "load" => Opcode::LOAD,
+            "add" => Opcode::ADD,
+            "sub" => Opcode::SUB,
+            "mul" => Opcode::MUL,
+            "div" => Opcode::DIV,
+            "hlt" => Opcode::HLT,
+            "jmp" => Opcode::JMP,
+            "jmpf" => Opcode::JMPF,
+            "jmpb" => Opcode::JMPB,
+            "eq" => Opcode::EQ,
+            "neq" => Opcode::NEQ,
+            "gte" => Opcode::GTE,
+            "gt" => Opcode::GT,
+            "lte" => Opcode::LTE,
+            "lt" => Opcode::LT,
+            "jmpe" => Opcode::JMPE,
+            "jmpne" => Opcode::JMPNE,
+            _ => Opcode::IGL,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,5 +117,14 @@ mod tests {
         let opcode = Opcode::HLT;
 
         assert_eq!(opcode, Opcode::HLT);
+    }
+
+    #[test]
+    fn test_str_to_opcode() {
+        let opcode = Opcode::from(CompleteStr("load"));
+        assert_eq!(opcode, Opcode::LOAD);
+
+        let opcode = Opcode::from(CompleteStr("illegal"));
+        assert_eq!(opcode, Opcode::IGL);
     }
 }
