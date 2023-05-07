@@ -1,5 +1,6 @@
 use crate::repl::REPL;
 
+mod assembler;
 mod instruction;
 mod opcode;
 mod repl;

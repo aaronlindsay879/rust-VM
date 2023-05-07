@@ -1,4 +1,6 @@
+use crate::assembler::program;
 use crate::vm::VM;
+use nom::types::CompleteStr;
 use std::fmt::UpperHex;
 use std::io;
 use std::io::Write;
@@ -62,11 +64,34 @@ impl REPL {
                     self.vm.run_once();
                 }
                 _ => {
-                    // tries and parses input as hex, pushes to program, and executes once
-                    match parse_hex(command) {
-                        Ok(bytes) => self.vm.program.extend_from_slice(&bytes),
-                        Err(_) => println!("failed to parse hex"),
-                    }
+                    // tries and parses input, pushes to program, and executes once
+                    let parsed_program = program(CompleteStr(command));
+                    let bytecode = match parsed_program.is_ok() {
+                        true => {
+                            // if parses as a valid program, treat it as assembly
+                            let (_, result) = parsed_program.unwrap();
+                            let bytecode = result.to_bytes();
+                            match bytecode {
+                                None => {
+                                    println!("invalid command");
+                                    continue;
+                                }
+                                Some(bytes) => bytes,
+                            }
+                        }
+                        false => {
+                            // otherwise treat as hex
+                            match parse_hex(command) {
+                                Ok(bytes) => bytes,
+                                Err(_) => {
+                                    println!("invalid command");
+                                    continue;
+                                }
+                            }
+                        }
+                    };
+
+                    self.vm.program.extend_from_slice(&bytecode);
                     self.vm.run_once();
                 }
             }
