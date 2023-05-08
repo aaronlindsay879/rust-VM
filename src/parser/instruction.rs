@@ -135,6 +135,17 @@ impl DirectiveInstruction {
 
                 Self::align(count * 4, alignment)
             }
+            Directive::Space => self
+                .operands
+                .first()
+                .and_then(|operand| {
+                    if let Operand::Value(value) = operand {
+                        Some(*value as usize)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(0),
             _ => 0,
         }
     }

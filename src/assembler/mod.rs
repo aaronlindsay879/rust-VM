@@ -117,19 +117,17 @@ impl Assembler {
             | Directive::Asciiz
             | Directive::Byte
             | Directive::Half
-            | Directive::Word => {
-                // string directive needs label
-                let label = directive
-                    .label
-                    .as_ref()
-                    .ok_or(AssemblerError::StringConstantDeclaredWithoutLabel)?;
-
-                // then add the symbol, returning error if it already exists
-                if !self
-                    .symbols
-                    .add_symbol(label, Symbol::new(*offset, SymbolType::Label))
-                {
-                    return Err(AssemblerError::SymbolAlreadyDeclared);
+            | Directive::Word
+            | Directive::Space => {
+                // add label if it exists
+                if let Some(label) = &directive.label {
+                    // then add the symbol, returning error if it already exists
+                    if !self
+                        .symbols
+                        .add_symbol(label, Symbol::new(*offset, SymbolType::Label))
+                    {
+                        return Err(AssemblerError::SymbolAlreadyDeclared);
+                    }
                 }
             }
             _ => {}
@@ -209,7 +207,8 @@ impl Assembler {
             | Directive::Asciiz
             | Directive::Byte
             | Directive::Half
-            | Directive::Word => {
+            | Directive::Word
+            | Directive::Space => {
                 let bytes = directive.aligned_bytes(self.next_alignment.take());
 
                 match (&self.current_section, bytes) {
@@ -374,6 +373,32 @@ mod tests {
         let expected_data = [
             128, 0, 0, 0, 127, 255, 255, 255, 127, 255, 255, 255, 0, 0, 0, 0,
         ];
+
+        let expected: Vec<u8> = expected_header
+            .into_iter()
+            .chain(expected_data.into_iter())
+            .collect();
+
+        let program = asm.assemble(program).unwrap();
+        assert_eq!(program, expected);
+    }
+
+    #[test]
+    fn test_space() {
+        let mut asm = Assembler::default();
+        let program = r#".data
+                                    .align 1
+                                    a: .byte 1
+                                    .space 6
+                                    .align 1
+                                    b: .byte 1
+                                .code"#;
+        let expected_header = [
+            69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 8, 0, 0, 0, 72, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let expected_data = [1, 0, 0, 0, 0, 0, 0, 1];
 
         let expected: Vec<u8> = expected_header
             .into_iter()
