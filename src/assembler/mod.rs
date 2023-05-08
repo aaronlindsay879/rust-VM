@@ -26,6 +26,7 @@ pub struct Assembler {
     code_section: Vec<u8>,
     symbols: SymbolTable,
     current_section: Option<AssemblerSection>,
+    next_alignment: Option<usize>,
 }
 
 impl Assembler {
@@ -80,35 +81,60 @@ impl Assembler {
                     offset += 4;
                 }
                 AssemblerInstruction::Directive(directive) => {
-                    // no operands, so treat as section
-                    if directive.operands.is_empty() {
-                        self.current_section = Some(AssemblerSection::from(directive.directive));
-                        continue;
-                    }
-
-                    // directive with label, so first check we're in a section
-                    if self.current_section.is_none() {
-                        return Err(AssemblerError::NoSegmentDeclarationFound);
-                    }
-
-                    // directive needs label
-                    let label = directive
-                        .label
-                        .as_ref()
-                        .ok_or(AssemblerError::StringConstantDeclaredWithoutLabel)?;
-
-                    // then add the symbol, returning error if it already exists
-                    if !self
-                        .symbols
-                        .add_symbol(label, Symbol::new(offset, SymbolType::Label))
-                    {
-                        return Err(AssemblerError::SymbolAlreadyDeclared);
-                    }
-
-                    // finally move offset by size of directive
-                    offset += directive.size(None) as u32;
+                    self.handle_directive_first_pass(directive, &mut offset)?;
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    /// Handles any directives encountered in the first pass
+    fn handle_directive_first_pass(
+        &mut self,
+        directive: &DirectiveInstruction,
+        offset: &mut u32,
+    ) -> Result<(), AssemblerError> {
+        // no operands, so treat as section
+        if directive.operands.is_empty() {
+            self.current_section = Some(AssemblerSection::from(directive.directive));
+            return Ok(());
+        }
+
+        // directive with label, so first check we're in a section
+        if self.current_section.is_none() {
+            return Err(AssemblerError::NoSegmentDeclarationFound);
+        }
+
+        match directive.directive {
+            Directive::Align => {
+                // if alignment, set the next alignment value to first argument
+                if let Some(&Operand::Value(value)) = directive.operands.first() {
+                    self.next_alignment = Some(value as usize);
+                }
+            }
+            Directive::Ascii | Directive::Asciiz => {
+                // string directive needs label
+                let label = directive
+                    .label
+                    .as_ref()
+                    .ok_or(AssemblerError::StringConstantDeclaredWithoutLabel)?;
+
+                // then add the symbol, returning error if it already exists
+                if !self
+                    .symbols
+                    .add_symbol(label, Symbol::new(*offset, SymbolType::Label))
+                {
+                    return Err(AssemblerError::SymbolAlreadyDeclared);
+                }
+            }
+            _ => {}
+        }
+
+        // skip align directive since works different
+        if directive.directive != Directive::Align {
+            // finally move offset by size of directive
+            *offset += directive.size(self.next_alignment.take()) as u32;
         }
 
         Ok(())
@@ -151,30 +177,47 @@ impl Assembler {
                     self.code_section.extend_from_slice(&buf);
                 }
                 AssemblerInstruction::Directive(directive) => {
-                    // no operands, so treat as section
-                    if directive.operands.is_empty() {
-                        self.current_section = Some(AssemblerSection::from(directive.directive));
-
-                        continue;
-                    }
-
-                    match (&directive.directive, directive.aligned_null_string(None)) {
-                        (Directive::Ascii | Directive::Asciiz, Some(string)) => {
-                            match self.current_section {
-                                Some(AssemblerSection::Data) => {
-                                    self.data_section.extend_from_slice(string.as_bytes())
-                                }
-                                Some(AssemblerSection::Code) => {
-                                    self.code_section.extend_from_slice(string.as_bytes());
-                                }
-                                _ => return Err(AssemblerError::NoSegmentDeclarationFound),
-                            }
-                        }
-                        _ => {}
-                    }
+                    self.handle_directive_second_pass(directive)?;
                 }
             }
         }
+        Ok(())
+    }
+
+    fn handle_directive_second_pass(
+        &mut self,
+        directive: &DirectiveInstruction,
+    ) -> Result<(), AssemblerError> {
+        // no operands, so treat as section
+        if directive.operands.is_empty() {
+            self.current_section = Some(AssemblerSection::from(directive.directive));
+
+            return Ok(());
+        }
+
+        match directive.directive {
+            Directive::Align => {
+                if let Some(&Operand::Value(value)) = directive.operands.first() {
+                    self.next_alignment = Some(value as usize);
+                }
+            }
+            Directive::Ascii | Directive::Asciiz => {
+                match (
+                    &self.current_section,
+                    directive.aligned_null_string(self.next_alignment.take()),
+                ) {
+                    (Some(AssemblerSection::Data), Some(string)) => {
+                        self.data_section.extend_from_slice(string.as_bytes())
+                    }
+                    (Some(AssemblerSection::Code), Some(string)) => {
+                        self.code_section.extend_from_slice(string.as_bytes());
+                    }
+                    _ => return Err(AssemblerError::NoSegmentDeclarationFound),
+                }
+            }
+            _ => {}
+        }
+
         Ok(())
     }
 
@@ -227,6 +270,32 @@ mod tests {
             .into_iter()
             .chain(expected_data.into_iter())
             .chain(expected_code.into_iter())
+            .collect();
+
+        let program = asm.assemble(program).unwrap();
+        assert_eq!(program, expected);
+    }
+
+    #[test]
+    fn test_alignment() {
+        let mut asm = Assembler::default();
+        let program = r#".data
+                                    .align 8
+                                    a: .asciiz 'a'
+                                    .align 2
+                                    b: .ascii 'a'
+                                    c: .ascii 'ab'
+                                .code"#;
+        let expected_header = [
+            69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 14, 0, 0, 0, 78, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let expected_data = [97, 0, 0, 0, 0, 0, 0, 0, 97, 0, 97, 98, 0, 0];
+
+        let expected: Vec<u8> = expected_header
+            .into_iter()
+            .chain(expected_data.into_iter())
             .collect();
 
         let program = asm.assemble(program).unwrap();

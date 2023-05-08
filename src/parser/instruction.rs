@@ -79,6 +79,7 @@ impl DirectiveInstruction {
         let alignment = alignment.unwrap_or(4);
 
         match self.directive {
+            Directive::Align => 0,
             Directive::Ascii => self
                 .operands
                 .first()

@@ -5,6 +5,7 @@ use nom::IResult;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Directive {
+    Align,
     Ascii,
     Asciiz,
     Code,
@@ -15,6 +16,7 @@ pub enum Directive {
 impl From<&str> for Directive {
     fn from(value: &str) -> Self {
         match &value.to_lowercase()[..] {
+            "align" => Self::Align,
             "ascii" => Self::Ascii,
             "asciiz" => Self::Asciiz,
             "code" => Self::Code,
