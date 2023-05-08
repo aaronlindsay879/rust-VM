@@ -1,5 +1,7 @@
+use crate::instruction::Instruction;
 use crate::opcode::Opcode;
 use crate::PIE_HEADER_PREFIX;
+use std::collections::VecDeque;
 
 /// Main virtual machine struct
 pub struct VM {
@@ -38,41 +40,6 @@ impl VM {
         self.program[0..4] == PIE_HEADER_PREFIX
     }
 
-    /// Decodes the opcode at the current PC, and increments PC by one
-    fn decode_opcode(&mut self) -> Opcode {
-        let opcode = Opcode::from(self.program[self.pc]);
-        self.pc += 1;
-
-        opcode
-    }
-
-    /// Returns the next 8 bits in program, and increments PC by one
-    fn next_8_bits(&mut self) -> u8 {
-        let result = self.program[self.pc];
-        self.pc += 1;
-
-        result
-    }
-
-    /// Returns the value of the register specified in the next 8 bits, and increments PC by one
-    fn next_register(&mut self) -> i32 {
-        self.registers[self.next_8_bits() as usize]
-    }
-
-    /// Returns a mutable reference to the register specified in the next 8 bits,
-    /// and increments PC by one
-    fn next_register_mut(&mut self) -> &mut i32 {
-        &mut self.registers[self.next_8_bits() as usize]
-    }
-
-    /// Returns the next 16 bits in program, and increments PC by two
-    fn next_16_bits(&mut self) -> u16 {
-        let result = ((self.program[self.pc] as u16) << 8) | (self.program[self.pc + 1] as u16);
-        self.pc += 2;
-
-        result
-    }
-
     /// Runs VM until completion
     pub fn run(&mut self) {
         // test header and then skip to code section
@@ -97,43 +64,52 @@ impl VM {
             return false;
         }
 
-        match self.decode_opcode() {
+        // read 4 bytes and advance PC
+        let mut instruction =
+            if let Some(inst) = Instruction::from(&self.program[self.pc..self.pc + 4]) {
+                inst
+            } else {
+                return false;
+            };
+        self.pc += 4;
+
+        match instruction.opcode {
             Opcode::LOAD => {
-                let register = self.next_8_bits() as usize;
-                let number = self.next_16_bits();
+                let register = instruction.next_u8() as usize;
+                let number = instruction.next_u16();
 
                 self.registers[register] = number as i32;
             }
             Opcode::STORE => {
-                let register = self.next_register();
-                let location = self.next_16_bits() as usize;
+                let register = instruction.next_register(&self.registers);
+                let location = instruction.next_u16() as usize;
 
                 self.program[location] = register as u8;
             }
             Opcode::ADD => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
-                *self.next_register_mut() = register_1 + register_2;
+                *instruction.next_register_mut(&mut self.registers) = register_1 + register_2;
             }
             Opcode::SUB => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
-                *self.next_register_mut() = register_1 - register_2;
+                *instruction.next_register_mut(&mut self.registers) = register_1 - register_2;
             }
             Opcode::MUL => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
-                *self.next_register_mut() = register_1 * register_2;
+                *instruction.next_register_mut(&mut self.registers) = register_1 * register_2;
             }
             Opcode::DIV => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
                 let (div, rem) = (register_1 / register_2, register_1 % register_2);
-                *self.next_register_mut() = div;
+                *instruction.next_register_mut(&mut self.registers) = div;
                 self.remainder = rem as u32;
             }
             Opcode::HLT => {
@@ -141,131 +117,102 @@ impl VM {
                 return false;
             }
             Opcode::JMP => {
-                let target = self.next_register();
+                let target = instruction.next_register(&self.registers);
 
                 self.pc = target as usize;
             }
             Opcode::JMPF => {
-                let offset = self.next_register();
+                let offset = instruction.next_register(&self.registers);
 
                 self.pc += offset as usize;
             }
             Opcode::JMPB => {
-                let offset = self.next_register();
+                let offset = instruction.next_register(&self.registers);
 
                 self.pc -= offset as usize;
             }
             Opcode::EQ => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
                 self.equality_flag = register_1 == register_2;
-                self.next_8_bits(); // eat next byte to pad instruction size
             }
             Opcode::NEQ => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
                 self.equality_flag = register_1 != register_2;
-                self.next_8_bits(); // eat next byte to pad instruction size
             }
             Opcode::GTE => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
                 self.equality_flag = register_1 >= register_2;
-                self.next_8_bits(); // eat next byte to pad instruction size
             }
             Opcode::GT => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
                 self.equality_flag = register_1 > register_2;
-                self.next_8_bits(); // eat next byte to pad instruction size
             }
             Opcode::LTE => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
                 self.equality_flag = register_1 <= register_2;
-                self.next_8_bits(); // eat next byte to pad instruction size
             }
             Opcode::LT => {
-                let register_1 = self.next_register();
-                let register_2 = self.next_register();
+                let register_1 = instruction.next_register(&self.registers);
+                let register_2 = instruction.next_register(&self.registers);
 
                 self.equality_flag = register_1 < register_2;
-                self.next_8_bits(); // eat next byte to pad instruction size
             }
             Opcode::JMPE => {
-                let target = self.next_register();
+                let target = instruction.next_register(&self.registers);
 
                 if self.equality_flag {
                     self.pc = target as usize;
-                } else {
-                    // otherwise pad
-                    self.next_8_bits();
-                    self.next_8_bits();
                 }
             }
             Opcode::JMPNE => {
-                let target = self.next_register();
+                let target = instruction.next_register(&self.registers);
 
                 if !self.equality_flag {
                     self.pc = target as usize;
-                } else {
-                    // otherwise pad
-                    self.next_8_bits();
-                    self.next_8_bits();
                 }
             }
-            Opcode::NOP => {
-                // eat next 3 bytes
-                self.next_8_bits();
-                self.next_8_bits();
-                self.next_8_bits();
-            }
+            Opcode::NOP => {}
             Opcode::ALOC => {
-                let bytes = self.next_register();
+                let bytes = instruction.next_register(&self.registers);
                 self.heap.resize(self.heap.len() + bytes as usize, 0);
             }
             Opcode::INC => {
-                *self.next_register_mut() += 1;
-                self.next_8_bits();
-                self.next_8_bits();
+                *instruction.next_register_mut(&mut self.registers) += 1;
             }
             Opcode::DEC => {
-                *self.next_register_mut() -= 1;
-                self.next_8_bits();
-                self.next_8_bits();
+                *instruction.next_register_mut(&mut self.registers) -= 1;
             }
             Opcode::DJMP => {
-                let target = self.next_16_bits();
+                let target = instruction.next_u16();
 
                 self.pc = target as usize;
             }
             Opcode::DJMPE => {
-                let target = self.next_16_bits();
+                let target = instruction.next_u16();
 
                 if self.equality_flag {
                     self.pc = target as usize;
-                } else {
-                    // otherwise pad
-                    self.next_8_bits();
                 }
             }
             Opcode::DJMPNE => {
-                let target = self.next_16_bits();
+                let target = instruction.next_u16();
 
                 if !self.equality_flag {
                     self.pc = target as usize;
-                } else {
-                    // otherwise pad
-                    self.next_8_bits();
                 }
             }
             Opcode::PRTS => {
-                let offset = self.next_16_bits() as usize;
+                let offset = instruction.next_u16() as usize;
                 let slice = self
                     .program
                     .iter()
@@ -278,23 +225,19 @@ impl VM {
                     Ok(s) => println!("{s}"),
                     Err(e) => println!("Error decoding string: {e:?}"),
                 };
-
-                self.next_8_bits();
             }
             Opcode::LOADM => {
-                let location = self.next_register() as usize;
+                let location = instruction.next_register(&self.registers) as usize;
                 let data = {
                     let slice = &self.heap[location..location + 4];
                     i32::from_be_bytes(slice.try_into().unwrap())
                 };
 
-                *self.next_register_mut() = data;
-
-                self.next_8_bits();
+                *instruction.next_register_mut(&mut self.registers) = data;
             }
             Opcode::SETM => {
-                let location = self.next_register() as usize;
-                let data = self.next_register();
+                let location = instruction.next_register(&self.registers) as usize;
+                let data = instruction.next_register(&self.registers);
 
                 for (mem, byte) in self.heap[location..location + 4]
                     .iter_mut()
@@ -302,8 +245,6 @@ impl VM {
                 {
                     *mem = byte;
                 }
-
-                self.next_8_bits();
             }
             _ => {
                 println!("Unrecognized opcode encountered");
@@ -385,7 +326,7 @@ mod tests {
 
         test_vm.run();
 
-        assert_eq!(test_vm.pc, 65);
+        assert_eq!(test_vm.pc, 68);
     }
 
     #[test]
@@ -398,7 +339,7 @@ mod tests {
 
         test_vm.run();
 
-        assert_eq!(test_vm.pc, 65);
+        assert_eq!(test_vm.pc, 68);
     }
 
     #[test]
@@ -464,16 +405,16 @@ mod tests {
     #[test]
     fn test_jmpf_opcode() {
         let mut test_vm = get_test_vm(vec![7, 0, 0, 0, 6, 0, 0, 0]);
-        test_vm.registers[0] = 2;
+        test_vm.registers[0] = 4;
         test_vm.run_once();
 
-        assert_eq!(test_vm.pc, 4);
+        assert_eq!(test_vm.pc, 8);
     }
 
     #[test]
     fn test_jmpb_opcode() {
         let mut test_vm = get_test_vm(vec![0, 0, 0, 10, 8, 1, 0, 0]);
-        test_vm.registers[1] = 6;
+        test_vm.registers[1] = 8;
         test_vm.run_once();
         test_vm.run_once();
 
