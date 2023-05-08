@@ -248,7 +248,7 @@ mod tests {
         let expected_data = [
             72, 101, 108, 108, 111, 0, 119, 111, 114, 108, 100, 33, 0, 0, 0, 0,
         ];
-        let expected_code = [19, 5, 0, 0, 19, 5, 0, 0, 21, 0, 81, 0];
+        let expected_code = [19, 5, 0, 0, 19, 5, 0, 0, 21, 0, 84, 0];
 
         let expected: Vec<u8> = expected_header
             .into_iter()
