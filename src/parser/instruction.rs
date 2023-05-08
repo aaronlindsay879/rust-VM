@@ -247,12 +247,12 @@ mod tests {
     #[test]
     fn test_parse_instruction() {
         assert_eq!(
-            parse_instruction("label: ADD 1, $4, $0"),
+            parse_instruction("label: LBI 1, $4, $0"),
             Ok((
                 "",
                 AssemblerInstruction::Opcode(OpcodeInstruction {
                     label: Some("label".into()),
-                    opcode: Opcode::ADD,
+                    opcode: Opcode::LBI,
                     operands: vec![
                         Operand::Value(1),
                         Operand::Register(4),
@@ -290,36 +290,36 @@ mod tests {
         );
 
         assert_eq!(
-            parse_opcode_instruction("JMP $0"),
+            parse_opcode_instruction("LBI $0"),
             Ok((
                 "",
                 OpcodeInstruction {
                     label: None,
-                    opcode: Opcode::JMP,
+                    opcode: Opcode::LBI,
                     operands: vec![Operand::Register(0)],
                 }
             ))
         );
 
         assert_eq!(
-            parse_opcode_instruction("JMP   @label"),
+            parse_opcode_instruction("LBI   @label"),
             Ok((
                 "",
                 OpcodeInstruction {
                     label: None,
-                    opcode: Opcode::JMP,
+                    opcode: Opcode::LBI,
                     operands: vec![Operand::Label("label".into())],
                 }
             ))
         );
 
         assert_eq!(
-            parse_opcode_instruction("ADD 1,$0,$0"),
+            parse_opcode_instruction("LBI 1,$0,$0"),
             Ok((
                 "",
                 OpcodeInstruction {
                     label: None,
-                    opcode: Opcode::ADD,
+                    opcode: Opcode::LBI,
                     operands: vec![
                         Operand::Value(1),
                         Operand::Register(0),
@@ -330,12 +330,12 @@ mod tests {
         );
 
         assert_eq!(
-            parse_opcode_instruction("label: ADD 1, $4, $0"),
+            parse_opcode_instruction("label: LBI 1, $4, $0"),
             Ok((
                 "",
                 OpcodeInstruction {
                     label: Some("label".into()),
-                    opcode: Opcode::ADD,
+                    opcode: Opcode::LBI,
                     operands: vec![
                         Operand::Value(1),
                         Operand::Register(4),

@@ -1,4 +1,5 @@
 use crate::opcode::Opcode;
+use num_traits::cast::FromPrimitive;
 use std::collections::VecDeque;
 
 /// Entire instruction for VM
@@ -17,7 +18,7 @@ impl Instruction {
             return None;
         }
 
-        let opcode = Opcode::from(slice[0]);
+        let opcode = Opcode::from_u8(slice[0]).unwrap_or(Opcode::IGL);
 
         let mut buffer = VecDeque::with_capacity(3);
         buffer.extend(slice[1..].iter());
@@ -61,7 +62,7 @@ mod tests {
 
     #[test]
     fn test_create_instruction() {
-        let instruction = Instruction::from(&[5, 0, 0, 0]);
+        let instruction = Instruction::from([0, 0, 0, 0]);
 
         assert_eq!(instruction.unwrap().opcode, Opcode::HLT);
     }

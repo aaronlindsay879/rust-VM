@@ -1,14 +1,9 @@
 .data
-    hello: .asciiz 'Hello'
-    world: .asciiz 'world!'
+secret: .word 0x706f6700
 .code
-    djmp @start
-    test: .asciiz "test"
-    start: load $0, 5
-    load $1, 2
-    loop: add $1, $3, $3
-    inc $2
-    eq $0, $2
-    djmpne @loop
-    prts @test
-    hlt
+        load $1, 10
+loop:   prts @secret
+        inc $0
+        eq $0, $1
+        djmpne @loop
+        hlt

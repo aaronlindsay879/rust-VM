@@ -1,161 +1,36 @@
-/// Opcodes for VM, 8 bits
-#[derive(Debug, PartialEq, Copy, Clone)]
+/// Opcodes for VM, 8 bits\
+/// Upper 6 bits = opcode\
+/// Lower 2 bits = addressing mode\
+/// 00 => Literal value, 01 => From memory, 10 => From Register
+#[derive(Debug, PartialEq, Copy, Clone, num_derive::FromPrimitive)]
 #[repr(u8)]
 #[allow(clippy::upper_case_acronyms)]
 pub enum Opcode {
-    /// Loads number into register such that {REGISTER} = {16 BIT NUMBER}\
-    /// LOAD {REGISTER} {16 bit number}
-    LOAD,
-    /// Adds two registers such that {OUT REG} = {IN REG 1} + {IN REG 2}\
-    /// ADD {IN REG 1} {IN REG 2} {OUT REG}
-    ADD,
-    /// Subtracts two registers such that {OUT REG} = {IN REG 1} - {IN REG 2}\
-    /// SUB {IN REG 1} {IN REG 2} {OUT REG}
-    SUB,
-    /// Multiplies two registers such that {OUT REG} = {IN REG 1} * {IN REG 2}\
-    /// MUL {IN REG 1} {IN REG 2} {OUT REG}
-    MUL,
-    /// Divides two registers such that {OUT REG} = {IN REG 1} / {IN REG 2}, with remainder stored\
-    /// DIV {IN REG 1} {IN REG 2} {OUT REG}
-    DIV,
     /// Halt
-    HLT,
-    /// Jumps to location specified by value in register {REGISTER}\
-    /// JMP {REGISTER}
-    JMP,
-    /// Jumps forwards by the value specified in register {REG}\
-    /// JMPF {REGISTER}
-    JMPF,
-    /// Jumps backwards by the value specified in register {REG}\
-    /// JMPB {REGISTER}
-    JMPB,
-    /// Stores the result of {REG 1} == {REG 2} in equality register\
-    /// EQ {REG 1} {REG 2}
-    EQ,
-    /// Stores the result of {REG 1} != {REG 2} in equality register\
-    /// NEQ {REG 1} {REG 2}
-    NEQ,
-    /// Stores the result of {REG 1} >= {REG 2} in equality register\
-    /// GTE {REG 1} {REG 2}
-    GTE,
-    /// Stores the result of {REG 1} > {REG 2} in equality register\
-    /// GT {REG 1} {REG 2}
-    GT,
-    /// Stores the result of {REG 1} <= {REG 2} in equality register\
-    /// LTE {REG 1} {REG 2}
-    LTE,
-    /// Stores the result of {REG 1} < {REG 2} in equality register\
-    /// LT {REG 1} {REG 2}
-    LT,
-    /// Jumps to location specified by value in register {REGISTER} if equality register is true\
-    /// JMPE {REGISTER}
-    JMPE,
-    /// Jumps to location specified by value in register {REGISTER} if equality register is false\
-    /// JMPNE {REGISTER}
-    JMPNE,
-    /// Does nothing
-    NOP,
-    /// Extends size of heap by the value given in {REGISTER}\
-    /// ALOC {REGISTER}
-    ALOC,
-    /// Increments value of {REGISTER} by 1\
-    /// INC {REGISTER}
-    INC,
-    /// Decrements value of {REGISTER} by 1\
-    /// DEC {REGISTER}
-    DEC,
-    /// Jumps to location specified by value {VALUE}\
-    /// DJMP {VALUE}
-    DJMP,
-    /// Jumps to location specified by value {VALUE} if equality register is true\
-    /// DJMPE {VALUE}
-    DJMPE,
-    /// Jumps to location specified by value {VALUE} if equality register is false\
-    /// DJMPNE {VALUE}
-    DJMPNE,
-    /// Prints each byte from {VALUE} until null byte reached
-    /// PRTS {VALUE}
-    PRTS,
-    /// Loads value in memory location {REG 1} and stores it in {REG 2}\
-    /// LOADM {REG 1} {REG 2}
-    LOADM,
-    /// Sets value in memory location {REG 1} to value in {REG 2}\
-    /// SETM {REG 1} {REG 2}
-    SETM,
-    /// Stores register into bytecode such that {16 BIT NUMBER} = {REGISTER}\
-    /// STORE {REGISTER} {16 bit number}
-    STORE,
-    /// Illegal opcode
-    IGL,
-}
-
-impl From<u8> for Opcode {
-    fn from(value: u8) -> Self {
-        match value {
-            0 => Opcode::LOAD,
-            1 => Opcode::ADD,
-            2 => Opcode::SUB,
-            3 => Opcode::MUL,
-            4 => Opcode::DIV,
-            5 => Opcode::HLT,
-            6 => Opcode::JMP,
-            7 => Opcode::JMPF,
-            8 => Opcode::JMPB,
-            9 => Opcode::EQ,
-            10 => Opcode::NEQ,
-            11 => Opcode::GTE,
-            12 => Opcode::GT,
-            13 => Opcode::LTE,
-            14 => Opcode::LT,
-            15 => Opcode::JMPE,
-            16 => Opcode::JMPNE,
-            17 => Opcode::NOP,
-            18 => Opcode::ALOC,
-            19 => Opcode::INC,
-            20 => Opcode::DEC,
-            21 => Opcode::DJMP,
-            22 => Opcode::DJMPE,
-            23 => Opcode::DJMPNE,
-            24 => Opcode::PRTS,
-            25 => Opcode::LOADM,
-            26 => Opcode::SETM,
-            27 => Opcode::STORE,
-            _ => Opcode::IGL,
-        }
-    }
+    HLT = 0b00000000,
+    /// Loads byte value into register
+    LBI = 0b00000100,
+    /// Loads value from memory into register
+    LBD = 0b00000101,
+    /// Loads half-word value into register
+    LHI = 0b00001000,
+    /// Loads half-word from memory into register
+    LHD = 0b00001001,
+    /// Loads word from memory into register
+    LWD = 0b00001101,
+    /// Illegal instruction
+    IGL = 0b11111111,
 }
 
 impl From<&str> for Opcode {
     fn from(value: &str) -> Self {
         match &value.to_lowercase()[..] {
-            "load" => Opcode::LOAD,
-            "add" => Opcode::ADD,
-            "sub" => Opcode::SUB,
-            "mul" => Opcode::MUL,
-            "div" => Opcode::DIV,
             "hlt" => Opcode::HLT,
-            "jmp" => Opcode::JMP,
-            "jmpf" => Opcode::JMPF,
-            "jmpb" => Opcode::JMPB,
-            "eq" => Opcode::EQ,
-            "neq" => Opcode::NEQ,
-            "gte" => Opcode::GTE,
-            "gt" => Opcode::GT,
-            "lte" => Opcode::LTE,
-            "lt" => Opcode::LT,
-            "jmpe" => Opcode::JMPE,
-            "jmpne" => Opcode::JMPNE,
-            "nop" => Opcode::NOP,
-            "aloc" => Opcode::ALOC,
-            "inc" => Opcode::INC,
-            "dec" => Opcode::DEC,
-            "djmp" => Opcode::DJMP,
-            "djmpe" => Opcode::DJMPE,
-            "djmpne" => Opcode::DJMPNE,
-            "prts" => Opcode::PRTS,
-            "loadm" => Opcode::LOADM,
-            "setm" => Opcode::SETM,
-            "store" => Opcode::STORE,
+            "lbi" => Opcode::LBI,
+            "lbd" => Opcode::LBD,
+            "lhi" => Opcode::LHI,
+            "lhd" => Opcode::LHD,
+            "lwd" => Opcode::LWD,
             _ => Opcode::IGL,
         }
     }
@@ -164,18 +39,19 @@ impl From<&str> for Opcode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use num_traits::cast::FromPrimitive;
 
     #[test]
     fn test_create_hlt() {
-        let opcode = Opcode::from(5);
+        let opcode = Opcode::from_u8(0);
 
-        assert_eq!(opcode, Opcode::HLT);
+        assert_eq!(opcode, Some(Opcode::HLT));
     }
 
     #[test]
     fn test_str_to_opcode() {
-        let opcode = Opcode::from("load");
-        assert_eq!(opcode, Opcode::LOAD);
+        let opcode = Opcode::from("lbi");
+        assert_eq!(opcode, Opcode::LBI);
 
         let opcode = Opcode::from("illegal");
         assert_eq!(opcode, Opcode::IGL);
