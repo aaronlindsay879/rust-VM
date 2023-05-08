@@ -10,4 +10,5 @@
     inc $2
     eq $0, $2
     djmpne @loop
+    prts @test
     hlt
