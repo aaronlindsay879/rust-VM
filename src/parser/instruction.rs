@@ -81,21 +81,46 @@ pub struct DirectiveInstruction {
 }
 
 impl DirectiveInstruction {
+    /// Size of 4-byte aligned null terminated string
     pub(crate) fn size(&self) -> usize {
         match &self.directive[..] {
             "asciiz" => self
                 .operands
-                .iter()
-                .filter_map(|operand| {
+                .first()
+                .and_then(|operand| {
                     if let Operand::String(string) = operand {
-                        Some(string.len() + 1)
+                        let len = string.len() + 1;
+                        let len = ((len + 3) / 4) * 4;
+
+                        Some(len)
                     } else {
                         None
                     }
                 })
-                .sum(),
+                .unwrap_or(0),
             _ => 0,
         }
+    }
+
+    /// Creates a null terminated string, aligned to 4 byte boundaries
+    pub(crate) fn aligned_null_string(&self) -> Option<String> {
+        let size = self.size();
+
+        self.operands.first().and_then(|operand| {
+            if let Operand::String(string) = operand {
+                // null terminate
+                let mut string = string.clone();
+
+                // pad to 4 byte increment
+                while string.len() < size {
+                    string.push('\0');
+                }
+
+                Some(string)
+            } else {
+                None
+            }
+        })
     }
 }
 
@@ -257,6 +282,39 @@ mod tests {
                     operands: vec![Operand::String("hi".into())],
                 }
             ))
+        );
+    }
+
+    #[test]
+    fn test_string_alignment() {
+        assert_eq!(
+            DirectiveInstruction {
+                label: None,
+                directive: "asciiz".to_string(),
+                operands: vec![Operand::String("hi".to_owned())],
+            }
+            .aligned_null_string(),
+            Some("hi\0\0".to_owned())
+        );
+
+        assert_eq!(
+            DirectiveInstruction {
+                label: None,
+                directive: "asciiz".to_string(),
+                operands: vec![Operand::String("hey".to_owned())],
+            }
+            .aligned_null_string(),
+            Some("hey\0".to_owned())
+        );
+
+        assert_eq!(
+            DirectiveInstruction {
+                label: None,
+                directive: "asciiz".to_string(),
+                operands: vec![Operand::String("hiii".to_owned())],
+            }
+            .aligned_null_string(),
+            Some("hiii\0\0\0\0".to_owned())
         );
     }
 }

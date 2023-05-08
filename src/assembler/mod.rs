@@ -22,8 +22,6 @@ mod symbols;
 #[derive(Default, Debug)]
 pub struct Assembler {
     data_section: Vec<u8>,
-    /// How many extra bytes are added to get to a multiple of 4
-    data_section_padding: usize,
     code_section: Vec<u8>,
     symbols: SymbolTable,
     current_section: Option<AssemblerSection>,
@@ -135,13 +133,7 @@ impl Assembler {
                             Operand::Label(label) => match self.symbols.get_symbol(label) {
                                 None => return Err(AssemblerError::IncorrectOperand),
                                 Some(symbol) => {
-                                    let mut offset =
-                                        symbol.offset as u16 + PIE_HEADER_LENGTH as u16;
-
-                                    if self.current_section == Some(AssemblerSection::Code) {
-                                        // factor in data section padding
-                                        offset += self.data_section_padding as u16;
-                                    }
+                                    let offset = symbol.offset as u16 + PIE_HEADER_LENGTH as u16;
 
                                     buf.extend_from_slice(&offset.to_be_bytes())
                                 }
@@ -164,37 +156,19 @@ impl Assembler {
                         self.current_section =
                             Some(AssemblerSection::from(directive.directive.as_str()));
 
-                        // if moved onto code section
-                        if self.current_section == Some(AssemblerSection::Code) {
-                            // pad data section to multiple of 4 bytes
-                            let data_len = ((self.data_section.len() as u32 + 3) / 4) * 4;
-
-                            let diff = data_len as usize - self.data_section.len();
-                            self.data_section_padding = diff;
-                            self.data_section.resize(data_len as usize, 0);
-                        }
                         continue;
                     }
 
-                    match &directive.directive[..] {
-                        "asciiz" => {
-                            let string = match directive.operands.first() {
-                                Some(Operand::String(string)) => string,
-                                _ => return Err(AssemblerError::IncorrectOperand),
-                            };
-
-                            match self.current_section {
-                                Some(AssemblerSection::Data) => {
-                                    self.data_section.extend_from_slice(string.as_bytes());
-                                    self.data_section.push(0);
-                                }
-                                Some(AssemblerSection::Code) => {
-                                    self.code_section.extend_from_slice(string.as_bytes());
-                                    self.code_section.push(0);
-                                }
-                                _ => return Err(AssemblerError::NoSegmentDeclarationFound),
+                    match (&directive.directive[..], directive.aligned_null_string()) {
+                        ("asciiz", Some(string)) => match self.current_section {
+                            Some(AssemblerSection::Data) => {
+                                self.data_section.extend_from_slice(string.as_bytes())
                             }
-                        }
+                            Some(AssemblerSection::Code) => {
+                                self.code_section.extend_from_slice(string.as_bytes());
+                            }
+                            _ => return Err(AssemblerError::NoSegmentDeclarationFound),
+                        },
                         _ => {}
                     }
                 }
@@ -246,7 +220,7 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         let expected_data = [
-            72, 101, 108, 108, 111, 0, 119, 111, 114, 108, 100, 33, 0, 0, 0, 0,
+            72, 101, 108, 108, 111, 0, 0, 0, 119, 111, 114, 108, 100, 33, 0, 0,
         ];
         let expected_code = [19, 5, 0, 0, 19, 5, 0, 0, 21, 0, 84, 0];
 
