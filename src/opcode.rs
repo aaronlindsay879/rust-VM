@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_create_hlt() {
-        let opcode = Opcode::HLT;
+        let opcode = Opcode::from(5);
 
         assert_eq!(opcode, Opcode::HLT);
     }
