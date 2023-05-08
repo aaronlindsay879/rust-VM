@@ -1,6 +1,7 @@
 /// Opcodes for VM, 8 bits
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u8)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum Opcode {
     /// Loads number into register such that {REGISTER} = {16 BIT NUMBER}\
     /// LOAD {REGISTER} {16 bit number}

@@ -77,7 +77,7 @@ fn parse_number(input: &str) -> IResult<&str, i32> {
                     None => number.to_owned(),
                 };
 
-                i32::from_str_radix(&string, 10)
+                string.parse()
             },
         )(dec)
     }

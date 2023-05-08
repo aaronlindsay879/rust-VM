@@ -13,7 +13,6 @@ use crate::parser::instruction::{AssemblerInstruction, DirectiveInstruction, Opc
 use crate::parser::operand::Operand;
 use crate::parser::Program;
 use crate::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
-use std::io::Write;
 
 mod errors;
 mod section;
@@ -317,6 +316,7 @@ mod tests {
                                     .align 2
                                     b: .byte 1
                                 .code"#;
+
         let expected_header = [
             69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 10, 0, 0, 0, 74, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

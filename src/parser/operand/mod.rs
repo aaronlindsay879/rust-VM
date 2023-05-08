@@ -22,7 +22,7 @@ pub enum Operand {
 pub(super) fn parse_operand(input: &str) -> IResult<&str, Operand> {
     alt((
         map(parse_register, Operand::Register),
-        map(parse_number, |number| Operand::Value(number as i32)),
+        map(parse_number, Operand::Value),
         map(parse_label_usage, |label| Operand::Label(label.to_owned())),
         map(parse_string, |string| Operand::String(string.to_owned())),
     ))(input)

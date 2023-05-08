@@ -1,9 +1,9 @@
 use crate::instruction::Instruction;
 use crate::opcode::Opcode;
 use crate::PIE_HEADER_PREFIX;
-use std::collections::VecDeque;
 
-/// Main virtual machine struct
+/// Main virtual machine
+#[derive(Default)]
 pub struct VM {
     /// CPU Registers
     pub(crate) registers: [i32; 32],
@@ -19,20 +19,6 @@ pub struct VM {
     pub(crate) equality_flag: bool,
     /// Heap memory
     heap: Vec<u8>,
-}
-
-impl Default for VM {
-    fn default() -> Self {
-        Self {
-            registers: [0; 32],
-            pc: 0,
-            program: vec![],
-            code_section_start: 0,
-            remainder: 0,
-            equality_flag: false,
-            heap: vec![],
-        }
-    }
 }
 
 impl VM {

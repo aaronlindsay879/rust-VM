@@ -9,6 +9,7 @@ use std::num::ParseIntError;
 use std::path::Path;
 
 #[derive(Default)]
+#[allow(clippy::upper_case_acronyms)]
 pub struct REPL {
     vm: VM,
     command_buffer: Vec<String>,
@@ -91,7 +92,7 @@ impl REPL {
                 }
                 _ => {
                     // tries and parses input, pushes to program, and executes once
-                    let bytecode = match Assembler::default().assemble(&command) {
+                    let bytecode = match Assembler::default().assemble(command) {
                         Ok(bytes) => bytes,
                         Err(_) => {
                             // otherwise treat as hex

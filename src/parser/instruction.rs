@@ -17,6 +17,8 @@ pub enum AssemblerInstruction {
 }
 
 impl AssemblerInstruction {
+    /// Used in testing
+    #[allow(unused)]
     pub fn new_opcode(label: Option<&str>, opcode: Opcode, operands: &[Operand]) -> Self {
         Self::Opcode(OpcodeInstruction {
             label: label.map(str::to_owned),
@@ -25,6 +27,8 @@ impl AssemblerInstruction {
         })
     }
 
+    /// Used in testing
+    #[allow(unused)]
     pub fn new_directive(label: Option<&str>, directive: Directive, operands: &[Operand]) -> Self {
         Self::Directive(DirectiveInstruction {
             label: label.map(str::to_owned),
