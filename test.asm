@@ -2,6 +2,10 @@
     hello: .asciiz 'Hello'
     world: .asciiz 'world!'
 .code
-loop:
-    add 2,$0,$0
-    djmp @loop
+    load $0, 5
+    load $1, 2
+    loop: add $1, $3, $3
+    inc $2
+    eq $0, $2
+    djmpne @loop
+    hlt

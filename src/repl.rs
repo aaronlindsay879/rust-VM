@@ -1,4 +1,5 @@
 //use crate::assembler::Assembler;
+use crate::assembler::Assembler;
 use crate::vm::VM;
 use std::fmt::UpperHex;
 use std::fs::File;
@@ -16,7 +17,6 @@ pub struct REPL {
 impl REPL {
     /// Starts interactive REPL session
     pub fn run(&mut self) {
-        //let mut assembler = Assembler::new();
         // buffer for user command
         let mut buffer = String::new();
         loop {
@@ -81,31 +81,31 @@ impl REPL {
                     file.read_to_string(&mut file_content)
                         .expect("Couldn't read file");
 
-                    // match assembler.assemble(&file_content) {
-                    //     Ok(bytes) => self.vm.program.extend_from_slice(&bytes),
-                    //     Err(e) => {
-                    //         println!("Couldn't parse input program: {e:?}");
-                    //         continue;
-                    //     }
-                    // }
+                    match Assembler::default().assemble(&file_content) {
+                        Ok(bytes) => self.vm.program.extend_from_slice(&bytes),
+                        Err(e) => {
+                            println!("Couldn't parse input program: {e:?}");
+                            continue;
+                        }
+                    }
                 }
                 _ => {
                     // tries and parses input, pushes to program, and executes once
-                    // let bytecode = match assembler.assemble(&command) {
-                    //     Ok(bytes) => bytes,
-                    //     Err(_) => {
-                    //         // otherwise treat as hex
-                    //         match parse_hex(command) {
-                    //             Ok(bytes) => bytes,
-                    //             Err(_) => {
-                    //                 println!("invalid command");
-                    //                 continue;
-                    //             }
-                    //         }
-                    //     }
-                    // };
-                    //
-                    // self.vm.program.extend_from_slice(&bytecode);
+                    let bytecode = match Assembler::default().assemble(&command) {
+                        Ok(bytes) => bytes,
+                        Err(_) => {
+                            // otherwise treat as hex
+                            match parse_hex(command) {
+                                Ok(bytes) => bytes,
+                                Err(_) => {
+                                    println!("invalid command");
+                                    continue;
+                                }
+                            }
+                        }
+                    };
+
+                    self.vm.program.extend_from_slice(&bytecode);
                     self.vm.run_once();
                 }
             }

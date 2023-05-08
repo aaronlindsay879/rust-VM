@@ -11,7 +11,7 @@ use nom::sequence::{delimited, tuple};
 use nom::IResult;
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) enum AssemblerInstruction {
+pub enum AssemblerInstruction {
     Opcode(OpcodeInstruction),
     Directive(DirectiveInstruction),
 }
@@ -32,6 +32,13 @@ impl AssemblerInstruction {
             operands: operands.to_vec(),
         })
     }
+
+    pub fn size(&self) -> usize {
+        match self {
+            AssemblerInstruction::Opcode(_) => 4,
+            AssemblerInstruction::Directive(directive) => directive.size(),
+        }
+    }
 }
 
 /// Parses an instruction of the form <label?> <opcode | directive> <operands?>
@@ -43,10 +50,10 @@ pub(super) fn parse_instruction(input: &str) -> IResult<&str, AssemblerInstructi
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) struct OpcodeInstruction {
-    pub(crate) label: Option<String>,
-    pub(crate) opcode: Opcode,
-    pub(crate) operands: Vec<Operand>,
+pub struct OpcodeInstruction {
+    pub label: Option<String>,
+    pub opcode: Opcode,
+    pub operands: Vec<Operand>,
 }
 
 /// Parses an instruction of the form <label?> <opcode> <operands?>
@@ -67,10 +74,29 @@ fn parse_opcode_instruction(input: &str) -> IResult<&str, OpcodeInstruction> {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) struct DirectiveInstruction {
-    pub(crate) label: Option<String>,
-    pub(crate) directive: String,
-    pub(crate) operands: Vec<Operand>,
+pub struct DirectiveInstruction {
+    pub label: Option<String>,
+    pub directive: String,
+    pub operands: Vec<Operand>,
+}
+
+impl DirectiveInstruction {
+    pub(crate) fn size(&self) -> usize {
+        match &self.directive[..] {
+            "asciiz" => self
+                .operands
+                .iter()
+                .filter_map(|operand| {
+                    if let Operand::String(string) = operand {
+                        Some(string.len() + 1)
+                    } else {
+                        None
+                    }
+                })
+                .sum(),
+            _ => 0,
+        }
+    }
 }
 
 /// Parses an instruction of the form <label?> <directive> <operands?>

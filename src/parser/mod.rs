@@ -1,8 +1,8 @@
 mod directive;
-mod instruction;
+pub mod instruction;
 mod label_declaration;
 mod opcode;
-mod operand;
+pub mod operand;
 
 use crate::parser::instruction::parse_instruction;
 use instruction::AssemblerInstruction;
@@ -14,8 +14,9 @@ use nom::multi::many0;
 use nom::sequence::{delimited, pair, separated_pair};
 use nom::IResult;
 
-struct Program {
-    instructions: Vec<AssemblerInstruction>,
+#[derive(Debug)]
+pub struct Program {
+    pub instructions: Vec<AssemblerInstruction>,
 }
 
 impl Program {

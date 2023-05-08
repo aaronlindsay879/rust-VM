@@ -1,254 +1,220 @@
 //! BYTECODE FORMAT
+//! ```norun
 //! <EPIE magic number>     00 00 00 00
 //! <data section offset>  <data section length>
 //! <code section offset>  <code section length>
+//! ```
 
-mod parser;
-
-use crate::assembler::instruction_parser::AssemblerInstruction;
-use crate::assembler::program_parsers::Program;
+use crate::assembler::errors::AssemblerError;
+use crate::assembler::section::AssemblerSection;
 use crate::assembler::symbols::{Symbol, SymbolTable, SymbolType};
-use crate::opcode::Opcode;
+use crate::parser::instruction::{AssemblerInstruction, DirectiveInstruction, OpcodeInstruction};
+use crate::parser::operand::Operand;
+use crate::parser::Program;
 use crate::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
-pub use program_parsers::program;
 use std::io::Write;
 
-#[derive(Debug, PartialEq, Clone)]
-pub enum Token {
-    Op { code: Opcode },
-    Register { reg_num: u8 },
-    IntegerOperand { value: i32 },
-    LabelDeclaration { name: String },
-    LabelUsage { name: String },
-    Directive { name: String },
-    IrString { name: String },
-}
+mod errors;
+mod section;
+mod symbols;
 
-#[derive(Debug)]
+/// Stores information used during assembly
+#[derive(Default, Debug)]
 pub struct Assembler {
-    phase: AssemblerPhase,
+    data_section: Vec<u8>,
+    /// How many extra bytes are added to get to a multiple of 4
+    data_section_padding: usize,
+    code_section: Vec<u8>,
     symbols: SymbolTable,
-    data: Vec<u8>,
-    bytecode: Vec<u8>,
-    data_offset: u32,
-    sections: Vec<AssemblerSection>,
     current_section: Option<AssemblerSection>,
-    current_instruction: u32,
-    errors: Vec<AssemblerError>,
 }
 
 impl Assembler {
-    pub fn new() -> Self {
-        Self {
-            phase: AssemblerPhase::First,
-            symbols: SymbolTable::new(),
-            data: vec![],
-            bytecode: vec![],
-            data_offset: 0,
-            sections: vec![],
-            current_section: None,
-            current_instruction: 0,
-            errors: vec![],
-        }
+    /// Assembles an assembly string into bytecode
+    pub fn assemble(&mut self, data: &str) -> Result<Vec<u8>, AssemblerError> {
+        let program = Program::parse(data).ok_or(AssemblerError::ParseError {
+            error: "failed to parse assembly".to_string(),
+        })?;
+
+        self.first_pass(&program.instructions)?;
+        self.second_pass(&program.instructions)?;
+
+        let mut out = self.create_header();
+        out.extend_from_slice(&self.data_section);
+        out.extend_from_slice(&self.code_section);
+
+        Ok(out)
     }
 
-    pub fn assemble(&mut self, raw: &str) -> Result<Vec<u8>, Vec<AssemblerError>> {
-        match program(CompleteStr(raw)) {
-            Ok((_remainder, program)) => {
-                // process first phase and check for errors
-                self.process_first_phase(&program);
-                if !self.errors.is_empty() {
-                    return Err(self.errors.clone());
+    /// First pass of assembler
+    /// Scans for symbols and builds the symbol table
+    fn first_pass(&mut self, program: &[AssemblerInstruction]) -> Result<(), AssemblerError> {
+        let mut offset = 0;
+
+        for instruction in program {
+            match instruction {
+                AssemblerInstruction::Opcode(OpcodeInstruction {
+                    label: Option::None,
+                    ..
+                }) => {
+                    // simplest case: instruction with no label
+                    // simply move offset by size of instruction (4 bytes)
+                    offset += 4;
                 }
-
-                // check both sections exist
-                if self.sections.len() != 2 {
-                    self.errors.push(AssemblerError::InsufficientSections);
-                    return Err(self.errors.clone());
-                }
-
-                // fit data to multiple of 4
-                let data_len = ((self.data.len() as u32 + 3) / 4) * 4;
-                self.data.resize(data_len as usize, 0);
-
-                self.process_second_phase(&program);
-
-                // write header and then data and bytecode
-                let mut assembled_program = self.write_pie_header();
-
-                assembled_program.extend_from_slice(&self.data);
-                assembled_program.extend_from_slice(&self.bytecode);
-
-                Ok(assembled_program)
-            }
-            Err(e) => Err(vec![AssemblerError::ParseError {
-                error: e.to_string(),
-            }]),
-        }
-    }
-
-    fn process_first_phase(&mut self, p: &Program) {
-        for inst in &p.instructions {
-            if inst.is_label() {
-                // make sure label is in a section
-                if self.current_section.is_some() {
-                    self.process_label_declaration(inst);
-                } else {
-                    self.errors.push(AssemblerError::NoSegmentDeclarationFound {
-                        instruction: self.current_instruction,
-                    });
-                }
-            }
-
-            if inst.is_directive() {
-                self.process_directive(inst);
-            }
-
-            self.current_instruction += 1;
-        }
-
-        self.phase = AssemblerPhase::Second;
-    }
-
-    fn process_label_declaration(&mut self, inst: &AssemblerInstruction) {
-        // extract label name
-        let name = match inst.get_label_name() {
-            None => {
-                self.errors
-                    .push(AssemblerError::StringConstantDeclaredWithoutLabel {
-                        instruction: self.current_instruction,
-                    });
-                return;
-            }
-            Some(name) => name,
-        };
-
-        // check if label already in use
-        if self.symbols.has_symbol(&name) {
-            self.errors.push(AssemblerError::SymbolAlreadyDeclared);
-            return;
-        }
-
-        let symbol = Symbol::new(name, SymbolType::Label);
-        self.symbols.add_symbol(symbol);
-    }
-
-    fn process_directive(&mut self, inst: &AssemblerInstruction) {
-        // extract name
-        let directive_name = match inst.get_directive_name() {
-            Some(name) => name,
-            None => {
-                println!("Directive has an invalid name: {:?}", inst);
-                return;
-            }
-        };
-
-        // check for and handle operands
-        if inst.has_operands() {
-            match &directive_name[..] {
-                "asciiz" => self.handle_asciiz(inst),
-                _ => {
-                    self.errors.push(AssemblerError::UnknownDirectiveFound {
-                        directive: directive_name.clone(),
-                    });
-                    return;
-                }
-            }
-        } else {
-            // if no operands, we know its a section header
-            self.process_section_header(&directive_name);
-        }
-    }
-
-    fn handle_asciiz(&mut self, inst: &AssemblerInstruction) {
-        // only meaningful in first pass
-        if self.phase != AssemblerPhase::First {
-            return;
-        }
-
-        match inst.get_string_constant() {
-            None => {
-                println!("String constant following an .asciiz was empty");
-            }
-            Some(s) => {
-                match inst.get_label_name() {
-                    None => {
-                        // something like .asciiz 'Hello'
-                        println!("Found a string constant with no associated label!");
-                        return;
+                AssemblerInstruction::Opcode(OpcodeInstruction {
+                    label: Some(label), ..
+                }) => {
+                    // instruction with label, so first check we're in a section
+                    if self.current_section.is_none() {
+                        return Err(AssemblerError::NoSegmentDeclarationFound);
                     }
-                    Some(name) => {
-                        self.symbols
-                            .set_symbol_offset(&name, self.data_offset + PIE_HEADER_LENGTH as u32);
+
+                    // then add the symbol, returning error if it already exists
+                    if !self
+                        .symbols
+                        .add_symbol(label, Symbol::new(offset, SymbolType::Label))
+                    {
+                        return Err(AssemblerError::SymbolAlreadyDeclared);
                     }
-                };
 
-                let bytes = s.as_bytes();
-
-                // write bytes + null byte
-                self.data.extend_from_slice(bytes);
-                self.data.push(0);
-
-                self.data_offset += (bytes.len() + 1) as u32;
-            }
-        }
-    }
-
-    fn process_section_header(&mut self, header_name: &str) {
-        let new_section: AssemblerSection = header_name.into();
-
-        if new_section == AssemblerSection::Unknown {
-            println!(
-                "Found an section header that is unknown: {:#?}",
-                header_name
-            );
-            return;
-        }
-
-        self.sections.push(new_section.clone());
-        self.current_section = Some(new_section);
-    }
-
-    fn process_second_phase(&mut self, program: &Program) {
-        // restart instruction counting
-        self.current_instruction = 0;
-
-        for inst in &program.instructions {
-            if inst.is_opcode() {
-                // by second phase, all data is written - so offset symbols by
-                // their position in bytecode + header offset + data offset
-                if let Some(Token::LabelDeclaration { name }) = &inst.label {
-                    self.symbols.set_symbol_offset(
-                        &name,
-                        self.bytecode.len() as u32
-                            + PIE_HEADER_LENGTH as u32
-                            + self.data.len() as u32,
-                    );
+                    // finally move offset by size of instruction (4 bytes)
+                    offset += 4;
                 }
+                AssemblerInstruction::Directive(directive) => {
+                    // no operands, so treat as section
+                    if directive.operands.is_empty() {
+                        self.current_section =
+                            Some(AssemblerSection::from(directive.directive.as_str()));
+                        continue;
+                    }
 
-                self.bytecode
-                    .extend_from_slice(&inst.to_bytes(&self.symbols).unwrap());
+                    // directive with label, so first check we're in a section
+                    if self.current_section.is_none() {
+                        return Err(AssemblerError::NoSegmentDeclarationFound);
+                    }
+
+                    // directive needs label
+                    let label = directive
+                        .label
+                        .as_ref()
+                        .ok_or(AssemblerError::StringConstantDeclaredWithoutLabel)?;
+
+                    // then add the symbol, returning error if it already exists
+                    if !self
+                        .symbols
+                        .add_symbol(label, Symbol::new(offset, SymbolType::Label))
+                    {
+                        return Err(AssemblerError::SymbolAlreadyDeclared);
+                    }
+
+                    // finally move offset by size of directive
+                    offset += directive.size() as u32;
+                }
             }
-
-            if inst.is_directive() {
-                self.process_directive(inst);
-            }
-
-            self.current_instruction += 1;
         }
+
+        Ok(())
     }
 
-    fn write_pie_header(&self) -> Vec<u8> {
+    /// Generates data and code section from program
+    fn second_pass(&mut self, program: &[AssemblerInstruction]) -> Result<(), AssemblerError> {
+        for instruction in program {
+            match instruction {
+                AssemblerInstruction::Opcode(opcode) => {
+                    // instructions are all 4 bytes
+                    let mut buf = Vec::with_capacity(4);
+
+                    // write opcode, and then up to 3 operands
+                    buf.push(opcode.opcode as u8);
+                    for operand in opcode.operands.iter().take(3) {
+                        match operand {
+                            Operand::Register(reg) => buf.push(*reg),
+                            Operand::Value(value) => {
+                                buf.extend_from_slice(&(*value as u16).to_be_bytes())
+                            }
+                            Operand::Label(label) => match self.symbols.get_symbol(label) {
+                                None => return Err(AssemblerError::IncorrectOperand),
+                                Some(symbol) => {
+                                    let mut offset =
+                                        symbol.offset as u16 + PIE_HEADER_LENGTH as u16;
+
+                                    if self.current_section == Some(AssemblerSection::Code) {
+                                        // factor in data section padding
+                                        offset += self.data_section_padding as u16;
+                                    }
+
+                                    buf.extend_from_slice(&offset.to_be_bytes())
+                                }
+                            },
+                            Operand::String(_) => return Err(AssemblerError::IncorrectOperand),
+                        }
+                    }
+
+                    // then ensure instruction is padded to 4 bytes
+                    if buf.len() < 4 {
+                        buf.resize(4, 0);
+                    }
+
+                    // then write buffer to main bytecode
+                    self.code_section.extend_from_slice(&buf);
+                }
+                AssemblerInstruction::Directive(directive) => {
+                    // no operands, so treat as section
+                    if directive.operands.is_empty() {
+                        self.current_section =
+                            Some(AssemblerSection::from(directive.directive.as_str()));
+
+                        // if moved onto code section
+                        if self.current_section == Some(AssemblerSection::Code) {
+                            // pad data section to multiple of 4 bytes
+                            let data_len = ((self.data_section.len() as u32 + 3) / 4) * 4;
+
+                            let diff = data_len as usize - self.data_section.len();
+                            self.data_section_padding = diff;
+                            self.data_section.resize(data_len as usize, 0);
+                        }
+                        continue;
+                    }
+
+                    match &directive.directive[..] {
+                        "asciiz" => {
+                            let string = match directive.operands.first() {
+                                Some(Operand::String(string)) => string,
+                                _ => return Err(AssemblerError::IncorrectOperand),
+                            };
+
+                            match self.current_section {
+                                Some(AssemblerSection::Data) => {
+                                    self.data_section.extend_from_slice(string.as_bytes());
+                                    self.data_section.push(0);
+                                }
+                                Some(AssemblerSection::Code) => {
+                                    self.code_section.extend_from_slice(string.as_bytes());
+                                    self.code_section.push(0);
+                                }
+                                _ => return Err(AssemblerError::NoSegmentDeclarationFound),
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Creates 64 byte header
+    fn create_header(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(PIE_HEADER_LENGTH);
 
         out.extend_from_slice(&PIE_HEADER_PREFIX);
         out.extend_from_slice(&[0, 0, 0, 0]);
 
         out.extend_from_slice(&64u32.to_be_bytes());
-        out.extend_from_slice(&(self.data.len() as u32).to_be_bytes());
+        out.extend_from_slice(&(self.data_section.len() as u32).to_be_bytes());
 
-        out.extend_from_slice(&(64 + self.data.len() as u32).to_be_bytes());
-        out.extend_from_slice(&(self.bytecode.len() as u32).to_be_bytes());
+        out.extend_from_slice(&(64 + self.data_section.len() as u32).to_be_bytes());
+        out.extend_from_slice(&(self.code_section.len() as u32).to_be_bytes());
 
         // then pad to final length
         if out.len() < PIE_HEADER_LENGTH {
@@ -259,64 +225,38 @@ impl Assembler {
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum AssemblerPhase {
-    First,
-    Second,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum AssemblerSection {
-    Data { starting_instruction: Option<u32> },
-    Code { starting_instruction: Option<u32> },
-    Unknown,
-}
-
-impl Default for AssemblerSection {
-    fn default() -> Self {
-        AssemblerSection::Unknown
-    }
-}
-
-impl<'a> From<&'a str> for AssemblerSection {
-    fn from(name: &str) -> AssemblerSection {
-        match name {
-            "data" => AssemblerSection::Data {
-                starting_instruction: None,
-            },
-            "code" => AssemblerSection::Code {
-                starting_instruction: None,
-            },
-            _ => AssemblerSection::Unknown,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum AssemblerError {
-    NoSegmentDeclarationFound { instruction: u32 },
-    StringConstantDeclaredWithoutLabel { instruction: u32 },
-    SymbolAlreadyDeclared,
-    UnknownDirectiveFound { directive: String },
-    NonOpcodeInOpcodeField,
-    InsufficientSections,
-    ParseError { error: String },
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vm::VM;
 
     #[test]
     fn test_assemble_program() {
-        let mut asm = Assembler::new();
-        let test_string =
-            "load $0 #100\nload $1 #1\nload $2 #0\ntest: inc $0\nneq $0 $2\njmpe @test\nhlt";
-        let program = asm.assemble(test_string).unwrap();
-        let mut vm = VM::default();
-        assert_eq!(program.len(), 28 + PIE_HEADER_LENGTH);
-        vm.program.extend_from_slice(&program);
-        assert_eq!(vm.program.len(), 28 + PIE_HEADER_LENGTH);
+        let mut asm = Assembler::default();
+        let program = r#".data
+                                    hello: .asciiz 'Hello'
+                                    world: .asciiz 'world!'
+                                .code
+                                    inc $5
+                                    loop:
+                                    inc $5
+                                    djmp @loop"#;
+        let expected_header = [
+            69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 16, 0, 0, 0, 80, 0, 0, 0, 12, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let expected_data = [
+            72, 101, 108, 108, 111, 0, 119, 111, 114, 108, 100, 33, 0, 0, 0, 0,
+        ];
+        let expected_code = [19, 5, 0, 0, 19, 5, 0, 0, 21, 0, 81, 0];
+
+        let expected: Vec<u8> = expected_header
+            .into_iter()
+            .chain(expected_data.into_iter())
+            .chain(expected_code.into_iter())
+            .collect();
+
+        let program = asm.assemble(program).unwrap();
+        assert_eq!(program, expected);
     }
 }

@@ -11,7 +11,7 @@ mod register;
 mod string;
 
 #[derive(PartialEq, Debug, Clone)]
-pub(crate) enum Operand {
+pub enum Operand {
     Register(u8),
     Value(i16),
     Label(String),
