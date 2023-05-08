@@ -13,7 +13,7 @@ mod string;
 #[derive(PartialEq, Debug, Clone)]
 pub enum Operand {
     Register(u8),
-    Value(i16),
+    Value(i32),
     Label(String),
     String(String),
 }
@@ -22,7 +22,7 @@ pub enum Operand {
 pub(super) fn parse_operand(input: &str) -> IResult<&str, Operand> {
     alt((
         map(parse_register, Operand::Register),
-        map(parse_number, |number| Operand::Value(number as i16)),
+        map(parse_number, |number| Operand::Value(number as i32)),
         map(parse_label_usage, |label| Operand::Label(label.to_owned())),
         map(parse_string, |string| Operand::String(string.to_owned())),
     ))(input)

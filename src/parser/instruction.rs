@@ -86,7 +86,7 @@ impl DirectiveInstruction {
                 .and_then(|operand| {
                     if let Operand::String(string) = operand {
                         let len = string.len();
-                        let len = ((len + alignment - 1) / alignment) * alignment;
+                        let len = Self::align(len, alignment);
 
                         Some(len)
                     } else {
@@ -100,7 +100,7 @@ impl DirectiveInstruction {
                 .and_then(|operand| {
                     if let Operand::String(string) = operand {
                         let len = string.len() + 1;
-                        let len = ((len + alignment - 1) / alignment) * alignment;
+                        let len = Self::align(len, alignment);
 
                         Some(len)
                     } else {
@@ -108,33 +108,102 @@ impl DirectiveInstruction {
                     }
                 })
                 .unwrap_or(0),
+            Directive::Byte => {
+                let count = self
+                    .operands
+                    .iter()
+                    .filter(|operand| matches!(operand, Operand::Value { .. }))
+                    .count();
+
+                Self::align(count, alignment)
+            }
+            Directive::Half => {
+                let count = self
+                    .operands
+                    .iter()
+                    .filter(|operand| matches!(operand, Operand::Value { .. }))
+                    .count();
+
+                Self::align(count * 2, alignment)
+            }
+            Directive::Word => {
+                let count = self
+                    .operands
+                    .iter()
+                    .filter(|operand| matches!(operand, Operand::Value { .. }))
+                    .count();
+
+                Self::align(count * 4, alignment)
+            }
             _ => 0,
         }
     }
 
     /// Creates a null terminated string. If alignment is None, default to 4 bytes.
-    pub(crate) fn aligned_null_string(&self, alignment: Option<usize>) -> Option<String> {
+    pub(crate) fn aligned_bytes(&self, alignment: Option<usize>) -> Option<Vec<u8>> {
         let size = self.size(alignment);
 
-        if self.directive != Directive::Ascii && self.directive != Directive::Asciiz {
-            return None;
+        let mut bytes = match self.directive {
+            Directive::Ascii => match self.operands.first() {
+                Some(Operand::String(string)) => string.as_bytes().to_vec(),
+                _ => vec![],
+            },
+            Directive::Asciiz => match self.operands.first() {
+                Some(Operand::String(string)) => {
+                    let mut string = string.clone();
+                    string.push('\0');
+
+                    string.as_bytes().to_vec()
+                }
+                _ => vec![],
+            },
+            Directive::Byte => self
+                .operands
+                .iter()
+                .filter_map(|operand| {
+                    if let &Operand::Value(value) = operand {
+                        Some(value as u8)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            Directive::Half => self
+                .operands
+                .iter()
+                .filter_map(|operand| {
+                    if let &Operand::Value(value) = operand {
+                        Some((value as u16).to_be_bytes())
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+                .collect(),
+            Directive::Word => self
+                .operands
+                .iter()
+                .filter_map(|operand| {
+                    if let &Operand::Value(value) = operand {
+                        Some((value as u32).to_be_bytes())
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+                .collect(),
+            _ => vec![],
+        };
+
+        if bytes.len() < size {
+            bytes.resize(size, 0);
         }
 
-        self.operands.first().and_then(|operand| {
-            if let Operand::String(string) = operand {
-                // null terminate
-                let mut string = string.clone();
+        Some(bytes)
+    }
 
-                // pad to 4 byte increment
-                while string.len() < size {
-                    string.push('\0');
-                }
-
-                Some(string)
-            } else {
-                None
-            }
-        })
+    fn align(value: usize, alignment: usize) -> usize {
+        ((value + alignment - 1) / alignment) * alignment
     }
 }
 
@@ -158,6 +227,7 @@ fn parse_directive_instruction(input: &str) -> IResult<&str, DirectiveInstructio
 #[cfg(test)]
 mod tests {
     use super::*;
+    use nom::AsBytes;
 
     #[test]
     fn test_parse_instruction() {
@@ -307,8 +377,8 @@ mod tests {
                 directive: Directive::Asciiz,
                 operands: vec![Operand::String("hi".to_owned())],
             }
-            .aligned_null_string(None),
-            Some("hi\0\0".to_owned())
+            .aligned_bytes(None),
+            Some("hi\0\0".as_bytes().to_vec())
         );
 
         assert_eq!(
@@ -317,8 +387,8 @@ mod tests {
                 directive: Directive::Asciiz,
                 operands: vec![Operand::String("hey".to_owned())],
             }
-            .aligned_null_string(None),
-            Some("hey\0".to_owned())
+            .aligned_bytes(None),
+            Some("hey\0".as_bytes().to_vec())
         );
 
         assert_eq!(
@@ -327,8 +397,8 @@ mod tests {
                 directive: Directive::Asciiz,
                 operands: vec![Operand::String("hiii".to_owned())],
             }
-            .aligned_null_string(None),
-            Some("hiii\0\0\0\0".to_owned())
+            .aligned_bytes(None),
+            Some("hiii\0\0\0\0".as_bytes().to_vec())
         );
     }
 }

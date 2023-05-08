@@ -113,7 +113,11 @@ impl Assembler {
                     self.next_alignment = Some(value as usize);
                 }
             }
-            Directive::Ascii | Directive::Asciiz => {
+            Directive::Ascii
+            | Directive::Asciiz
+            | Directive::Byte
+            | Directive::Half
+            | Directive::Word => {
                 // string directive needs label
                 let label = directive
                     .label
@@ -201,20 +205,24 @@ impl Assembler {
                     self.next_alignment = Some(value as usize);
                 }
             }
-            Directive::Ascii | Directive::Asciiz => {
-                match (
-                    &self.current_section,
-                    directive.aligned_null_string(self.next_alignment.take()),
-                ) {
-                    (Some(AssemblerSection::Data), Some(string)) => {
-                        self.data_section.extend_from_slice(string.as_bytes())
+            Directive::Ascii
+            | Directive::Asciiz
+            | Directive::Byte
+            | Directive::Half
+            | Directive::Word => {
+                let bytes = directive.aligned_bytes(self.next_alignment.take());
+
+                match (&self.current_section, bytes) {
+                    (Some(AssemblerSection::Data), Some(bytes)) => {
+                        self.data_section.extend_from_slice(&bytes)
                     }
-                    (Some(AssemblerSection::Code), Some(string)) => {
-                        self.code_section.extend_from_slice(string.as_bytes());
+                    (Some(AssemblerSection::Code), Some(bytes)) => {
+                        self.data_section.extend_from_slice(&bytes)
                     }
                     _ => return Err(AssemblerError::NoSegmentDeclarationFound),
                 }
             }
+
             _ => {}
         }
 
@@ -292,6 +300,80 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0,
         ];
         let expected_data = [97, 0, 0, 0, 0, 0, 0, 0, 97, 0, 97, 98, 0, 0];
+
+        let expected: Vec<u8> = expected_header
+            .into_iter()
+            .chain(expected_data.into_iter())
+            .collect();
+
+        let program = asm.assemble(program).unwrap();
+        assert_eq!(program, expected);
+    }
+
+    #[test]
+    fn test_byte() {
+        let mut asm = Assembler::default();
+        let program = r#".data
+                                    a: .byte 1, 2, 3, 4, 5
+                                    .align 2
+                                    b: .byte 1
+                                .code"#;
+        let expected_header = [
+            69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 10, 0, 0, 0, 74, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let expected_data = [1, 2, 3, 4, 5, 0, 0, 0, 1, 0];
+
+        let expected: Vec<u8> = expected_header
+            .into_iter()
+            .chain(expected_data.into_iter())
+            .collect();
+
+        let program = asm.assemble(program).unwrap();
+        assert_eq!(program, expected);
+    }
+
+    #[test]
+    fn test_half() {
+        let mut asm = Assembler::default();
+        let program = r#".data
+                                    a: .half 100, 200, 300
+                                    .align 2
+                                    b: .half 256
+                                .code"#;
+        let expected_header = [
+            69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 10, 0, 0, 0, 74, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let expected_data = [0, 100, 0, 200, 1, 44, 0, 0, 1, 0];
+
+        let expected: Vec<u8> = expected_header
+            .into_iter()
+            .chain(expected_data.into_iter())
+            .collect();
+
+        let program = asm.assemble(program).unwrap();
+        assert_eq!(program, expected);
+    }
+
+    #[test]
+    fn test_word() {
+        let mut asm = Assembler::default();
+        let program = r#".data
+                                    a: .word -2147483648, 2147483647
+                                    .align 8
+                                    b: .word 2147483647
+                                .code"#;
+        let expected_header = [
+            69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 16, 0, 0, 0, 80, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let expected_data = [
+            128, 0, 0, 0, 127, 255, 255, 255, 127, 255, 255, 255, 0, 0, 0, 0,
+        ];
 
         let expected: Vec<u8> = expected_header
             .into_iter()
