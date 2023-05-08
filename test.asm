@@ -1,10 +1,7 @@
 .data
     hello: .asciiz 'Hello'
-    world: .asciiz 'vorld!'
+    world: .asciiz 'world!'
 .code
-    load $0 @world
-    inc $0
-    store $0 @world
-
-    PRTS @hello
-    PRTS @world
+loop:
+    add 2,$0,$0
+    djmp @loop

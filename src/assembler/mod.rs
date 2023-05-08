@@ -3,21 +3,13 @@
 //! <data section offset>  <data section length>
 //! <code section offset>  <code section length>
 
-mod directive_parsers;
-mod instruction_parser;
-mod label_parsers;
-mod opcode_parsers;
-mod operand_parsers;
-mod program_parsers;
-mod register_parsers;
-mod symbols;
+mod parser;
 
 use crate::assembler::instruction_parser::AssemblerInstruction;
 use crate::assembler::program_parsers::Program;
 use crate::assembler::symbols::{Symbol, SymbolTable, SymbolType};
 use crate::opcode::Opcode;
 use crate::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
-use nom::types::CompleteStr;
 pub use program_parsers::program;
 use std::io::Write;
 

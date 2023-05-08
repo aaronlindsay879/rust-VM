@@ -1,8 +1,9 @@
 use crate::repl::REPL;
 
-mod assembler;
+//mod assembler;
 mod instruction;
 mod opcode;
+mod parser;
 mod repl;
 mod vm;
 
