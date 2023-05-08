@@ -215,7 +215,7 @@ impl Assembler {
                         self.data_section.extend_from_slice(&bytes)
                     }
                     (Some(AssemblerSection::Code), Some(bytes)) => {
-                        self.data_section.extend_from_slice(&bytes)
+                        self.code_section.extend_from_slice(&bytes)
                     }
                     _ => return Err(AssemblerError::NoSegmentDeclarationFound),
                 }
