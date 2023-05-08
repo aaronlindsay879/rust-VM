@@ -1,3 +1,5 @@
+use crate::parser::directive::Directive;
+
 #[derive(Debug, PartialEq)]
 pub(super) enum AssemblerSection {
     Data,
@@ -11,11 +13,11 @@ impl Default for AssemblerSection {
     }
 }
 
-impl From<&str> for AssemblerSection {
-    fn from(value: &str) -> Self {
+impl From<Directive> for AssemblerSection {
+    fn from(value: Directive) -> Self {
         match value {
-            "data" => Self::Data,
-            "code" => Self::Code,
+            Directive::Data => Self::Data,
+            Directive::Code => Self::Code,
             _ => Self::Unknown,
         }
     }

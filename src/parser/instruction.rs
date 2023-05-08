@@ -1,5 +1,5 @@
 use crate::opcode::Opcode;
-use crate::parser::directive::parse_directive;
+use crate::parser::directive::{parse_directive, Directive};
 use crate::parser::label_declaration::parse_label_declaration;
 use crate::parser::opcode::parse_opcode;
 use crate::parser::operand::{parse_operand, Operand};
@@ -25,19 +25,12 @@ impl AssemblerInstruction {
         })
     }
 
-    pub fn new_directive(label: Option<&str>, directive: &str, operands: &[Operand]) -> Self {
+    pub fn new_directive(label: Option<&str>, directive: Directive, operands: &[Operand]) -> Self {
         Self::Directive(DirectiveInstruction {
             label: label.map(str::to_owned),
-            directive: directive.to_owned(),
+            directive,
             operands: operands.to_vec(),
         })
-    }
-
-    pub fn size(&self) -> usize {
-        match self {
-            AssemblerInstruction::Opcode(_) => 4,
-            AssemblerInstruction::Directive(directive) => directive.size(),
-        }
     }
 }
 
@@ -76,21 +69,37 @@ fn parse_opcode_instruction(input: &str) -> IResult<&str, OpcodeInstruction> {
 #[derive(PartialEq, Debug, Clone)]
 pub struct DirectiveInstruction {
     pub label: Option<String>,
-    pub directive: String,
+    pub directive: Directive,
     pub operands: Vec<Operand>,
 }
 
 impl DirectiveInstruction {
-    /// Size of 4-byte aligned null terminated string
-    pub(crate) fn size(&self) -> usize {
-        match &self.directive[..] {
-            "asciiz" => self
+    /// Size of 4-byte aligned null terminated string. If alignment is None, default to 4 bytes.
+    pub(crate) fn size(&self, alignment: Option<usize>) -> usize {
+        let alignment = alignment.unwrap_or(4);
+
+        match self.directive {
+            Directive::Ascii => self
+                .operands
+                .first()
+                .and_then(|operand| {
+                    if let Operand::String(string) = operand {
+                        let len = string.len();
+                        let len = ((len + alignment - 1) / alignment) * alignment;
+
+                        Some(len)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(0),
+            Directive::Asciiz => self
                 .operands
                 .first()
                 .and_then(|operand| {
                     if let Operand::String(string) = operand {
                         let len = string.len() + 1;
-                        let len = ((len + 3) / 4) * 4;
+                        let len = ((len + alignment - 1) / alignment) * alignment;
 
                         Some(len)
                     } else {
@@ -102,9 +111,13 @@ impl DirectiveInstruction {
         }
     }
 
-    /// Creates a null terminated string, aligned to 4 byte boundaries
-    pub(crate) fn aligned_null_string(&self) -> Option<String> {
-        let size = self.size();
+    /// Creates a null terminated string. If alignment is None, default to 4 bytes.
+    pub(crate) fn aligned_null_string(&self, alignment: Option<usize>) -> Option<String> {
+        let size = self.size(alignment);
+
+        if self.directive != Directive::Ascii && self.directive != Directive::Asciiz {
+            return None;
+        }
 
         self.operands.first().and_then(|operand| {
             if let Operand::String(string) = operand {
@@ -290,30 +303,30 @@ mod tests {
         assert_eq!(
             DirectiveInstruction {
                 label: None,
-                directive: "asciiz".to_string(),
+                directive: Directive::Asciiz,
                 operands: vec![Operand::String("hi".to_owned())],
             }
-            .aligned_null_string(),
+            .aligned_null_string(None),
             Some("hi\0\0".to_owned())
         );
 
         assert_eq!(
             DirectiveInstruction {
                 label: None,
-                directive: "asciiz".to_string(),
+                directive: Directive::Asciiz,
                 operands: vec![Operand::String("hey".to_owned())],
             }
-            .aligned_null_string(),
+            .aligned_null_string(None),
             Some("hey\0".to_owned())
         );
 
         assert_eq!(
             DirectiveInstruction {
                 label: None,
-                directive: "asciiz".to_string(),
+                directive: Directive::Asciiz,
                 operands: vec![Operand::String("hiii".to_owned())],
             }
-            .aligned_null_string(),
+            .aligned_null_string(None),
             Some("hiii\0\0\0\0".to_owned())
         );
     }

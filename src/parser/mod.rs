@@ -1,4 +1,4 @@
-mod directive;
+pub mod directive;
 pub mod instruction;
 mod label_declaration;
 mod opcode;
@@ -90,6 +90,7 @@ mod tests {
     use super::*;
     use crate::instruction::Instruction;
     use crate::opcode::Opcode;
+    use crate::parser::directive::Directive;
     use crate::parser::instruction::DirectiveInstruction;
     use crate::parser::operand::Operand;
     use crate::parser::operand::Operand::String;
@@ -126,18 +127,18 @@ mod tests {
         assert_eq!(
             program.instructions,
             vec![
-                AssemblerInstruction::new_directive(None, "data", &[]),
+                AssemblerInstruction::new_directive(None, Directive::Data, &[]),
                 AssemblerInstruction::new_directive(
                     Some("hello"),
-                    "asciiz",
+                    Directive::Asciiz,
                     &[String("Hello".to_owned())]
                 ),
                 AssemblerInstruction::new_directive(
                     Some("world"),
-                    "asciiz",
+                    Directive::Asciiz,
                     &[String("world!".to_owned())]
                 ),
-                AssemblerInstruction::new_directive(None, "code", &[]),
+                AssemblerInstruction::new_directive(None, Directive::Code, &[]),
                 AssemblerInstruction::new_opcode(
                     Some("loop"),
                     Opcode::ADD,

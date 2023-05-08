@@ -8,6 +8,7 @@
 use crate::assembler::errors::AssemblerError;
 use crate::assembler::section::AssemblerSection;
 use crate::assembler::symbols::{Symbol, SymbolTable, SymbolType};
+use crate::parser::directive::Directive;
 use crate::parser::instruction::{AssemblerInstruction, DirectiveInstruction, OpcodeInstruction};
 use crate::parser::operand::Operand;
 use crate::parser::Program;
@@ -81,8 +82,7 @@ impl Assembler {
                 AssemblerInstruction::Directive(directive) => {
                     // no operands, so treat as section
                     if directive.operands.is_empty() {
-                        self.current_section =
-                            Some(AssemblerSection::from(directive.directive.as_str()));
+                        self.current_section = Some(AssemblerSection::from(directive.directive));
                         continue;
                     }
 
@@ -106,7 +106,7 @@ impl Assembler {
                     }
 
                     // finally move offset by size of directive
-                    offset += directive.size() as u32;
+                    offset += directive.size(None) as u32;
                 }
             }
         }
@@ -153,22 +153,23 @@ impl Assembler {
                 AssemblerInstruction::Directive(directive) => {
                     // no operands, so treat as section
                     if directive.operands.is_empty() {
-                        self.current_section =
-                            Some(AssemblerSection::from(directive.directive.as_str()));
+                        self.current_section = Some(AssemblerSection::from(directive.directive));
 
                         continue;
                     }
 
-                    match (&directive.directive[..], directive.aligned_null_string()) {
-                        ("asciiz", Some(string)) => match self.current_section {
-                            Some(AssemblerSection::Data) => {
-                                self.data_section.extend_from_slice(string.as_bytes())
+                    match (&directive.directive, directive.aligned_null_string(None)) {
+                        (Directive::Ascii | Directive::Asciiz, Some(string)) => {
+                            match self.current_section {
+                                Some(AssemblerSection::Data) => {
+                                    self.data_section.extend_from_slice(string.as_bytes())
+                                }
+                                Some(AssemblerSection::Code) => {
+                                    self.code_section.extend_from_slice(string.as_bytes());
+                                }
+                                _ => return Err(AssemblerError::NoSegmentDeclarationFound),
                             }
-                            Some(AssemblerSection::Code) => {
-                                self.code_section.extend_from_slice(string.as_bytes());
-                            }
-                            _ => return Err(AssemblerError::NoSegmentDeclarationFound),
-                        },
+                        }
                         _ => {}
                     }
                 }
@@ -207,7 +208,7 @@ mod tests {
     fn test_assemble_program() {
         let mut asm = Assembler::default();
         let program = r#".data
-                                    hello: .asciiz 'Hello'
+                                    hello: .ascii 'Hell'
                                     world: .asciiz 'world!'
                                 .code
                                     inc $5
@@ -215,14 +216,12 @@ mod tests {
                                     inc $5
                                     djmp @loop"#;
         let expected_header = [
-            69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 16, 0, 0, 0, 80, 0, 0, 0, 12, 0, 0,
+            69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 12, 0, 0, 0, 76, 0, 0, 0, 12, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        let expected_data = [
-            72, 101, 108, 108, 111, 0, 0, 0, 119, 111, 114, 108, 100, 33, 0, 0,
-        ];
-        let expected_code = [19, 5, 0, 0, 19, 5, 0, 0, 21, 0, 84, 0];
+        let expected_data = [72, 101, 108, 108, 119, 111, 114, 108, 100, 33, 0, 0];
+        let expected_code = [19, 5, 0, 0, 19, 5, 0, 0, 21, 0, 80, 0];
 
         let expected: Vec<u8> = expected_header
             .into_iter()
