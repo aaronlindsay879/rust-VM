@@ -14,7 +14,7 @@ loop:   prtsd @string       ; prints string stored at label string
 end:    hlt                 ; finishes executing
 ```
 ```
-user@artixpc> ./rvm run test.asm                                                                                                                                                                                                                                                   22:39
+user@artixpc> ./rvm run test.asm
 a
 b
 [ .. ]
