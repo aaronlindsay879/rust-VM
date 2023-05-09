@@ -24,8 +24,16 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    Repl { path: Option<PathBuf> },
-    Run { path: PathBuf },
+    Repl {
+        path: Option<PathBuf>,
+    },
+    Run {
+        path: PathBuf,
+        #[arg(short = 'p', long)]
+        print_program: bool,
+        #[arg(short = 'r', long)]
+        print_registers: bool,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -50,7 +58,11 @@ fn main() -> anyhow::Result<()> {
 
             repl.run();
         }
-        Command::Run { path } => {
+        Command::Run {
+            path,
+            print_program,
+            print_registers,
+        } => {
             // read data
             let mut file = File::open(path)?;
             let mut data = String::new();
@@ -62,12 +74,16 @@ fn main() -> anyhow::Result<()> {
             vm.run();
 
             // then dump program/registers
-            println!("\n\nfinal program:");
-            repl::pretty_print_hex(&vm.program, 2);
+            if print_program {
+                println!("\nfinal program:");
+                repl::pretty_print_hex(&vm.program, 2);
+            }
 
-            println!("\nfinal registers:");
-            repl::pretty_print_hex(&vm.registers, 8);
-            println!("Equality register: {}", vm.equality_flag);
+            if print_registers {
+                println!("\nfinal registers:");
+                repl::pretty_print_hex(&vm.registers, 8);
+                println!("Equality register: {}", vm.equality_flag);
+            }
         }
     }
 
