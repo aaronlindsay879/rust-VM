@@ -41,4 +41,14 @@
 | SWI         | store byte immediate     | 06           | SWI $1,0  | MEM[0..4] <- $1 |
 | MOV         | move register            | 07           | MOV $0,$1 | $0 <- $1        |
 
-
+### Arithmetic
+| instruction | short description  | opcode (hex) | example      | meaning       |
+|-------------|--------------------|--------------|--------------|---------------|
+| ADR         | add register       | 10           | ADR $1,$2,$3 | $1 <- $2 + 3  |
+| ADI         | add immediate      | 10           | ADI $0,10    | $0 <- $0 + 10 |
+| SUR         | subtract register  | 11           | SUR $1,$2,$3 | $1 <- $2 - 3  |
+| SUI         | subtract immediate | 11           | SUI $0,10    | $0 <- $0 - 10 |
+| MLR         | multiply register  | 12           | MLR $1,$2,$3 | $1 <- $2 * 3  |
+| MLI         | multiply immediate | 12           | MLI $0,10    | $0 <- $0 * 10 |
+| DVR         | divide register    | 13           | DVR $1,$2,$3 | $1 <- $2 / 3  |
+| DVI         | divide immediate   | 13           | DVI $0,10    | $0 <- $0 / 10 |

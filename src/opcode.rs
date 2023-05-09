@@ -26,6 +26,22 @@ pub enum Opcode {
     SWI = 0b00011000,
     /// Copies register value
     MOV = 0b00011110,
+    /// Adds two registers
+    ADR = 0b01000010,
+    /// Adds a register and a literal
+    ADI = 0b01000000,
+    /// Subtracts two registers
+    SUR = 0b01000110,
+    /// Subtracts a register and a literal
+    SUI = 0b01000100,
+    /// Multiplies two registers
+    MLR = 0b01001010,
+    /// Multiplies a register and a literal
+    MLI = 0b01001000,
+    /// Divides two registers
+    DVR = 0b01001110,
+    /// Divides a register and a literal
+    DVI = 0b01001100,
     /// Illegal instruction
     IGL = 0b11111111,
 }
@@ -43,6 +59,14 @@ impl From<&str> for Opcode {
             "shi" => Opcode::SHI,
             "swi" => Opcode::SWI,
             "mov" => Opcode::MOV,
+            "adr" => Opcode::ADR,
+            "adi" => Opcode::ADI,
+            "sur" => Opcode::SUR,
+            "sui" => Opcode::SUI,
+            "mlr" => Opcode::MLR,
+            "mli" => Opcode::MLI,
+            "dvr" => Opcode::DVR,
+            "dvi" => Opcode::DVI,
             _ => Opcode::IGL,
         }
     }

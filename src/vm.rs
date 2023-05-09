@@ -133,6 +133,65 @@ impl VM {
 
                 self.registers[register_a] = register_b;
             }
+            Opcode::ADR => {
+                let register_a = instruction.next_u8() as usize;
+                let register_b = instruction.next_register(&self.registers);
+                let register_c = instruction.next_register(&self.registers);
+
+                self.registers[register_a] = register_b + register_c;
+            }
+            Opcode::ADI => {
+                let register_a = instruction.next_u8() as usize;
+                let value = instruction.next_u16() as i32;
+
+                self.registers[register_a] += value;
+            }
+            Opcode::SUR => {
+                let register_a = instruction.next_u8() as usize;
+                let register_b = instruction.next_register(&self.registers);
+                let register_c = instruction.next_register(&self.registers);
+
+                self.registers[register_a] = register_b - register_c;
+            }
+            Opcode::SUI => {
+                let register_a = instruction.next_u8() as usize;
+                let value = instruction.next_u16() as i32;
+
+                self.registers[register_a] -= value;
+            }
+            Opcode::MLR => {
+                let register_a = instruction.next_u8() as usize;
+                let register_b = instruction.next_register(&self.registers);
+                let register_c = instruction.next_register(&self.registers);
+
+                self.registers[register_a] = register_b * register_c;
+            }
+            Opcode::MLI => {
+                let register_a = instruction.next_u8() as usize;
+                let value = instruction.next_u16() as i32;
+
+                self.registers[register_a] *= value;
+            }
+            Opcode::DVR => {
+                let register_a = instruction.next_u8() as usize;
+                let register_b = instruction.next_register(&self.registers);
+                let register_c = instruction.next_register(&self.registers);
+
+                let (value, remainder) = (register_b / register_c, register_b % register_c);
+
+                self.registers[register_a] = value;
+                self.remainder = remainder as u32;
+            }
+            Opcode::DVI => {
+                let register_addr = instruction.next_u8() as usize;
+                let register_value = self.registers[register_addr];
+                let value = instruction.next_u16() as i32;
+
+                let (value, remainder) = (register_value / value, register_value % value);
+
+                self.registers[register_addr] = value;
+                self.remainder = remainder as u32;
+            }
             _ => {
                 println!("Unrecognized opcode encountered");
                 return false;
@@ -234,4 +293,14 @@ mod tests {
     opcode_test!(test_opcode_shi; vm; [20, 1, 0, 0], &vm.program[0..4] => [0, 10, 0x49, 0x45]);
     opcode_test!(test_opcode_swi; vm; [24, 1, 0, 0], &vm.program[0..4] => [0, 0, 0, 10]);
     opcode_test!(test_opcode_mov; vm; [30, 0, 1, 0], vm.registers[0] => 10);
+
+    // arithmetic instructions
+    opcode_test!(test_opcode_adr; vm; [66, 2, 0, 1], vm.registers[2] => 15);
+    opcode_test!(test_opcode_adi; vm; [64, 0, 1, 2], vm.registers[0] => 263);
+    opcode_test!(test_opcode_sur; vm; [70, 2, 1, 0], vm.registers[2] => 5);
+    opcode_test!(test_opcode_sui; vm; [68, 0, 0, 4], vm.registers[0] => 1);
+    opcode_test!(test_opcode_mlr; vm; [74, 2, 1, 0], vm.registers[2] => 50);
+    opcode_test!(test_opcode_mli; vm; [72, 0, 0, 4], vm.registers[0] => 20);
+    opcode_test!(test_opcode_dvr; vm; [78, 2, 1, 0], vm.registers[2] => 2, vm.remainder => 0);
+    opcode_test!(test_opcode_dvi; vm; [76, 0, 0, 4], vm.registers[0] => 1, vm.remainder => 1);
 }
