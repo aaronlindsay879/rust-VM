@@ -66,13 +66,19 @@ impl VM {
             }
             Opcode::LDBI => {
                 let register = instruction.next_u8() as usize;
-                let value = instruction.next_u8() as i32;
+                let value = instruction.next_u16() as u8 as i32;
 
                 self.registers[register] = value;
             }
             Opcode::LDBD => {
                 let register = instruction.next_u8() as usize;
                 let address = instruction.next_u16() as usize;
+
+                self.registers[register] = self.program[address] as i32;
+            }
+            Opcode::LDBR => {
+                let register = instruction.next_u8() as usize;
+                let address = instruction.next_register(&self.registers) as usize;
 
                 self.registers[register] = self.program[address] as i32;
             }
@@ -85,6 +91,14 @@ impl VM {
             Opcode::LDHD => {
                 let register = instruction.next_u8() as usize;
                 let address = instruction.next_u16() as usize;
+
+                let bytes = [self.program[address], self.program[address + 1]];
+
+                self.registers[register] = i16::from_be_bytes(bytes) as i32;
+            }
+            Opcode::LDHR => {
+                let register = instruction.next_u8() as usize;
+                let address = instruction.next_register(&self.registers) as usize;
 
                 let bytes = [self.program[address], self.program[address + 1]];
 
@@ -103,9 +117,28 @@ impl VM {
 
                 self.registers[register] = i32::from_be_bytes(bytes);
             }
+            Opcode::LDWR => {
+                let register = instruction.next_u8() as usize;
+                let address = instruction.next_register(&self.registers) as usize;
+
+                let bytes = [
+                    self.program[address],
+                    self.program[address + 1],
+                    self.program[address + 2],
+                    self.program[address + 3],
+                ];
+
+                self.registers[register] = i32::from_be_bytes(bytes);
+            }
             Opcode::STRBI => {
                 let register = instruction.next_register(&self.registers) as u8;
                 let address = instruction.next_u16() as usize;
+
+                self.program[address] = register;
+            }
+            Opcode::STRBR => {
+                let register = instruction.next_register(&self.registers) as u8;
+                let address = instruction.next_register(&self.registers) as usize;
 
                 self.program[address] = register;
             }
@@ -118,9 +151,27 @@ impl VM {
                     address += 1;
                 }
             }
+            Opcode::STRHR => {
+                let register = instruction.next_register(&self.registers) as u16;
+                let mut address = instruction.next_register(&self.registers) as usize;
+
+                for byte in register.to_be_bytes() {
+                    self.program[address] = byte;
+                    address += 1;
+                }
+            }
             Opcode::STRWI => {
                 let register = instruction.next_register(&self.registers) as u32;
                 let mut address = instruction.next_u16() as usize;
+
+                for byte in register.to_be_bytes() {
+                    self.program[address] = byte;
+                    address += 1;
+                }
+            }
+            Opcode::STRWR => {
+                let register = instruction.next_register(&self.registers) as u32;
+                let mut address = instruction.next_register(&self.registers) as usize;
 
                 for byte in register.to_be_bytes() {
                     self.program[address] = byte;
@@ -327,6 +378,36 @@ impl VM {
                     self.pc = instruction.next_register(&self.registers) as usize;
                 }
             }
+            Opcode::PRTSD => {
+                let start = instruction.next_u16() as usize;
+                let mut end = start;
+
+                while self.program[end] != 0 {
+                    end += 1;
+                }
+
+                let string = std::str::from_utf8(&self.program[start..end]);
+                if let Ok(string) = string {
+                    println!("{string}");
+                } else {
+                    println!("Invalid string!");
+                }
+            }
+            Opcode::PRTSR => {
+                let start = instruction.next_register(&self.registers) as usize;
+                let mut end = start;
+
+                while self.program[end] != 0 {
+                    end += 1;
+                }
+
+                let string = std::str::from_utf8(&self.program[start..end]);
+                if let Ok(string) = string {
+                    println!("{string}");
+                } else {
+                    println!("Invalid string!");
+                }
+            }
             _ => {
                 println!("Unrecognized opcode encountered");
                 return false;
@@ -427,15 +508,21 @@ mod tests {
 
     // load instructions
     opcode_test!(test_opcode_ldbi; vm; [4, 0, 255, 255], vm.registers[0] => 0xFF);
-    opcode_test!(test_opcode_lbd; vm; [5, 0, 0, 0], vm.registers[0] => 0x45);
-    opcode_test!(test_opcode_lhi; vm; [8, 0, 255, 255], vm.registers[0] => 0xFFFF);
-    opcode_test!(test_opcode_lhd; vm; [9, 0, 0, 0], vm.registers[0] => 0x4550);
-    opcode_test!(test_opcode_lwd; vm; [13, 0, 0, 0], vm.registers[0] => 0x45504945);
+    opcode_test!(test_opcode_ldbd; vm; [5, 0, 0, 0], vm.registers[0] => 0x45);
+    opcode_test!(test_opcode_ldbr; vm; [6, 0, 0, 0], vm.registers[0] => 0xAB; vm.program[5] => 0xAB);
+    opcode_test!(test_opcode_ldhi; vm; [8, 0, 255, 255], vm.registers[0] => 0xFFFF);
+    opcode_test!(test_opcode_ldhd; vm; [9, 0, 0, 0], vm.registers[0] => 0x4550);
+    opcode_test!(test_opcode_ldhr; vm; [10, 0, 0, 0], vm.registers[0] => -21555; vm.program[5] => 0xAB, vm.program[6] => 0xCD);
+    opcode_test!(test_opcode_ldwd; vm; [13, 0, 0, 0], vm.registers[0] => 0x45504945);
+    opcode_test!(test_opcode_ldwr; vm; [14, 0, 0, 0], vm.registers[0] => 0x40ABCDEF; vm.program[5] => 0x40, vm.program[6] => 0xAB, vm.program[7] => 0xCD, vm.program[8] => 0xEF);
 
     // store/move instructions
-    opcode_test!(test_opcode_sbi; vm; [16, 1, 0, 0], &vm.program[0..4] => [10, 0x50, 0x49, 0x45]);
-    opcode_test!(test_opcode_shi; vm; [20, 1, 0, 0], &vm.program[0..4] => [0, 10, 0x49, 0x45]);
-    opcode_test!(test_opcode_swi; vm; [24, 1, 0, 0], &vm.program[0..4] => [0, 0, 0, 10]);
+    opcode_test!(test_opcode_strbi; vm; [16, 1, 0, 0], &vm.program[0..4] => [10, 0x50, 0x49, 0x45]);
+    opcode_test!(test_opcode_strbr; vm; [18, 1, 0, 0], &vm.program[5..9] => [10, 0, 0, 0]);
+    opcode_test!(test_opcode_strhi; vm; [20, 1, 0, 0], &vm.program[0..4] => [0, 10, 0x49, 0x45]);
+    opcode_test!(test_opcode_strhr; vm; [22, 1, 0, 0], &vm.program[5..9] => [0, 10, 0, 0]);
+    opcode_test!(test_opcode_strwi; vm; [24, 1, 0, 0], &vm.program[0..4] => [0, 0, 0, 10]);
+    opcode_test!(test_opcode_strwr; vm; [26, 1, 0, 0], &vm.program[5..9] => [0, 0, 0, 10]);
     opcode_test!(test_opcode_mov; vm; [30, 0, 1, 0], vm.registers[0] => 10);
 
     // arithmetic instructions

@@ -29,17 +29,23 @@
 | IGL         | illegal                  | 3F           | IGL      | Illegal instruction |
 
 ### Data transfer
-| instruction | short description         | opcode (hex) | example    | meaning         |
-|-------------|---------------------------|--------------|------------|-----------------|
-| LDBI        | load byte immediate       | 01           | LDBI $1,0  | $1 <- 0         |
-| LDBD        | load byte direct          | 01           | LDBD $1,0  | $1 <- MEM[0]    |
-| LDHI        | load half-word immediate  | 02           | LDHI $1,0  | $1 <- 0         |
-| LDHD        | load half-word direct     | 02           | LDHD $1,0  | $1 <- MEM[0..2] |
-| LDWD        | load word direct          | 03           | LDWD $1,0  | $1 <- MEM[0..4] |
-| STRBI       | store byte immediate      | 04           | STRBI $1,0 | MEM[0] <- $1    |
-| STRHI       | store half-word immediate | 05           | STRHI $1,0 | MEM[0..2] <- $1 |
-| STRWI       | store word immediate      | 06           | STRWI $1,0 | MEM[0..4] <- $1 |
-| MOV         | move register             | 07           | MOV $0,$1  | $0 <- $1        |
+| instruction | short description         | opcode (hex) | example     | meaning         |
+|-------------|---------------------------|--------------|-------------|-----------------|
+| LDBI        | load byte immediate       | 01           | LDBI $1,0   | $1 <- 0         |
+| LDBD        | load byte direct          | 01           | LDBD $1,0   | $1 <- MEM[0]    |
+| LDBR        | load byte register        | 01           | LDBR $1,$0  | $1 <- MEM[$0]   |
+| LDHI        | load half-word immediate  | 02           | LDHI $1,0   | $1 <- 0         |
+| LDHD        | load half-word direct     | 02           | LDHD $1,0   | $1 <- MEM[0..2] |
+| LDHR        | load half-word register   | 02           | LDHR $1,$0  | $1 <- MEM[$0]   |
+| LDWD        | load word direct          | 03           | LDWD $1,0   | $1 <- MEM[0..4] |
+| LDWR        | load word register        | 03           | LDWR $1,$0  | $1 <- MEM[$0]   |
+| STRBI       | store byte immediate      | 04           | STRBI $1,0  | MEM[0] <- $1    |
+| STRBR       | store byte register       | 04           | STRBR $1,$0 | MEM[$0] <- $1   |
+| STRHI       | store half-word immediate | 05           | STRHI $1,0  | MEM[0..2] <- $1 |
+| STRHR       | store half-word register  | 05           | STRHR $1,$0 | MEM[$0] <- $1   |
+| STRWI       | store word immediate      | 06           | STRWI $1,0  | MEM[0..4] <- $1 |
+| STRWR       | store word register       | 06           | STRWR $1,$0 | MEM[$0] <- $1   |
+| MOV         | move register             | 07           | MOV $0,$1   | $0 <- $1        |
 
 ### Arithmetic
 | instruction | short description  | opcode (hex) | example       | meaning       |
@@ -74,12 +80,18 @@ All results are stored in special equality register
 ### Jumps
 | instruction | short description           | opcode (hex) | example   | meaning                                  |
 |-------------|-----------------------------|--------------|-----------|------------------------------------------|
-| JMPI        | jump immediate              | 28           | JMPI 12   | pc <- 10                                 |
+| JMPI        | jump immediate              | 28           | JMPI 10   | pc <- 10                                 |
 | JMPD        | jump direct                 | 28           | JMPD 10   | pc <- MEM[10..14]                        |
 | JMPR        | jump register               | 28           | JMPR $0   | pc <- $0                                 |
-| JMPEI       | jump if equal immediate     | 29           | JMPEI 12  | if equality_register: pc <- 10           |
+| JMPEI       | jump if equal immediate     | 29           | JMPEI 10  | if equality_register: pc <- 10           |
 | JMPED       | jump if equal direct        | 29           | JMPED 10  | if equality_register: pc <- MEM[10..14]  |
 | JMPER       | jump if equal register      | 29           | JMPER $0  | if equality_register: pc <- $0           |
-| JMPNEI      | jump if not equal immediate | 2A           | JMPNEI 12 | if !equality_register: pc <- 10          |
+| JMPNEI      | jump if not equal immediate | 2A           | JMPNEI 10 | if !equality_register: pc <- 10          |
 | JMPNED      | jump if not equal direct    | 2A           | JMPNED 10 | if !equality_register: pc <- MEM[10..14] |
 | JMPNER      | jump if not equal register  | 2A           | JMPNER $0 | if !equality_register: pc <- $0          |
+
+### Special
+| instruction | short description     | opcode (hex) | example  | meaning                                 |
+|-------------|-----------------------|--------------|----------|-----------------------------------------|
+| PRTSD       | print string direct   | 30           | PRTSD 64 | prints string from MEM[64..] until null |
+| PRTSR       | print string register | 30           | PRTSR $0 | prints string from MEM[$0..] until null |

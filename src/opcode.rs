@@ -10,20 +10,32 @@ pub enum Opcode {
     HLT = 0b00000000,
     /// Loads byte value into register
     LDBI = 0b00000100,
-    /// Loads value from memory into register
+    /// Loads byte value from memory into register
     LDBD = 0b00000101,
+    /// Loads byte value from memory specified by register into register,
+    LDBR = 0b00000110,
     /// Loads half-word value into register
     LDHI = 0b00001000,
     /// Loads half-word from memory into register
     LDHD = 0b00001001,
+    /// Loads byte value from memory specified by register into register,
+    LDHR = 0b00001010,
     /// Loads word from memory into register
     LDWD = 0b00001101,
+    /// Loads word value from memory specified by register into register,
+    LDWR = 0b00001110,
     /// Stores byte from register into memory with address from raw value
     STRBI = 0b00010000,
+    /// Stores byte from register into memory with address from register
+    STRBR = 0b00010010,
     /// Stores half-word from register into memory with address from raw value
     STRHI = 0b00010100,
+    /// Stores half-word from register into memory with address from register
+    STRHR = 0b00010110,
     /// Stores word from register into memory with address from raw value
     STRWI = 0b00011000,
+    /// Stores word from register into memory with address from register
+    STRWR = 0b00011010,
     /// Copies register value
     MOV = 0b00011110,
     /// Adds two registers
@@ -84,6 +96,10 @@ pub enum Opcode {
     JMPNED = 0b10101001,
     /// Jumps to location read from register if equality register false
     JMPNER = 0b10101010,
+    /// Prints string from memory location until null byte found
+    PRTSD = 0b11000001,
+    /// Prints string from memory location specified in register until null byte found
+    PRTSR = 0b11000010,
     /// Illegal instruction
     IGL = 0b11111111,
 }
@@ -94,12 +110,18 @@ impl From<&str> for Opcode {
             "hlt" => Opcode::HLT,
             "ldbi" => Opcode::LDBI,
             "ldbd" => Opcode::LDBD,
+            "ldbr" => Opcode::LDBR,
             "ldhi" => Opcode::LDHI,
             "ldhd" => Opcode::LDHD,
+            "ldhr" => Opcode::LDHR,
             "ldwd" => Opcode::LDWD,
+            "ldwr" => Opcode::LDWR,
             "strbi" => Opcode::STRBI,
+            "strbr" => Opcode::STRBR,
             "strhi" => Opcode::STRHI,
+            "strhr" => Opcode::STRHR,
             "strwi" => Opcode::STRWI,
+            "strwr" => Opcode::STRWR,
             "mov" => Opcode::MOV,
             "addr" => Opcode::ADDR,
             "addi" => Opcode::ADDI,
@@ -130,6 +152,8 @@ impl From<&str> for Opcode {
             "jmpnei" => Opcode::JMPNEI,
             "jmpned" => Opcode::JMPNED,
             "jmpner" => Opcode::JMPNER,
+            "prtsd" => Opcode::PRTSD,
+            "prtsr" => Opcode::PRTSR,
             _ => Opcode::IGL,
         }
     }

@@ -1,7 +1,9 @@
 .data
+string: .asciiz "hi"
 .code
-loop:   addi $0,2
-        addi $1,1
-        eqi $1,5
-        jmpnei @loop
-        hlt
+        prtsd @string
+        ldhi $0, @string
+        addi $0, 2
+        addi $1, 0x69
+        strbr $1, $0
+        prtsd @string
