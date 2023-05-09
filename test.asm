@@ -3,7 +3,7 @@
 string: .asciiz "a"         ; store the null-terminated string "a"
 .code
 loop:   prtsd @string       ; prints string stored at label string
-        ldbd $0, @string    ; loads the raw value of label string (so the location in memory) into register 0
+        ldbd $0, @string    ; loads the byte located at the label string into register 0
         addi $0, 1          ; adds 1 to register 0
         gti $0, 0x7a        ; check if the new value in register 0 is greater than 0x7a (the character 'z')
         jmpei @end          ; if it is greater, jump to end
