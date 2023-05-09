@@ -1,3 +1,4 @@
+mod comment;
 pub mod directive;
 pub mod instruction;
 mod label_declaration;
@@ -88,10 +89,8 @@ fn parse_number(input: &str) -> IResult<&str, i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instruction::Instruction;
     use crate::opcode::Opcode;
     use crate::parser::directive::Directive;
-    use crate::parser::instruction::DirectiveInstruction;
     use crate::parser::operand::Operand;
     use crate::parser::operand::Operand::String;
 

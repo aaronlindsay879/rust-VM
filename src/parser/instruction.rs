@@ -1,4 +1,5 @@
 use crate::opcode::Opcode;
+use crate::parser::comment::parse_comment;
 use crate::parser::directive::{parse_directive, Directive};
 use crate::parser::label_declaration::parse_label_declaration;
 use crate::parser::opcode::parse_opcode;
@@ -61,8 +62,9 @@ fn parse_opcode_instruction(input: &str) -> IResult<&str, OpcodeInstruction> {
             multispace0,
             parse_opcode,
             many0(delimited(multispace0, parse_operand, opt(char(',')))),
+            parse_comment,
         )),
-        |(label, _, opcode, operands)| OpcodeInstruction {
+        |(label, _, opcode, operands, _)| OpcodeInstruction {
             label: label.map(str::to_owned),
             opcode,
             operands,
@@ -230,8 +232,9 @@ fn parse_directive_instruction(input: &str) -> IResult<&str, DirectiveInstructio
             multispace0,
             parse_directive,
             many0(delimited(multispace0, parse_operand, opt(char(',')))),
+            parse_comment,
         )),
-        |(label, _, directive, operands)| DirectiveInstruction {
+        |(label, _, directive, operands, _)| DirectiveInstruction {
             label: label.map(str::to_owned),
             directive: directive.to_owned(),
             operands,
@@ -242,7 +245,6 @@ fn parse_directive_instruction(input: &str) -> IResult<&str, DirectiveInstructio
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nom::AsBytes;
 
     #[test]
     fn test_parse_instruction() {
