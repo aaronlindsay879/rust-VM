@@ -18,6 +18,14 @@ pub enum Opcode {
     LHD = 0b00001001,
     /// Loads word from memory into register
     LWD = 0b00001101,
+    /// Stores byte from register into memory with address from raw value
+    SBI = 0b00010000,
+    /// Stores half-word from register into memory with address from raw value
+    SHI = 0b00010100,
+    /// Stores word from register into memory with address from raw value
+    SWI = 0b00011000,
+    /// Copies register value
+    MOV = 0b00011110,
     /// Illegal instruction
     IGL = 0b11111111,
 }
@@ -31,6 +39,10 @@ impl From<&str> for Opcode {
             "lhi" => Opcode::LHI,
             "lhd" => Opcode::LHD,
             "lwd" => Opcode::LWD,
+            "sbi" => Opcode::SBI,
+            "shi" => Opcode::SHI,
+            "swi" => Opcode::SWI,
+            "mov" => Opcode::MOV,
             _ => Opcode::IGL,
         }
     }

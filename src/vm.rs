@@ -103,6 +103,36 @@ impl VM {
 
                 self.registers[register] = i32::from_be_bytes(bytes);
             }
+            Opcode::SBI => {
+                let register = instruction.next_register(&self.registers) as u8;
+                let address = instruction.next_u16() as usize;
+
+                self.program[address] = register;
+            }
+            Opcode::SHI => {
+                let register = instruction.next_register(&self.registers) as u16;
+                let mut address = instruction.next_u16() as usize;
+
+                for byte in register.to_be_bytes() {
+                    self.program[address] = byte;
+                    address += 1;
+                }
+            }
+            Opcode::SWI => {
+                let register = instruction.next_register(&self.registers) as u32;
+                let mut address = instruction.next_u16() as usize;
+
+                for byte in register.to_be_bytes() {
+                    self.program[address] = byte;
+                    address += 1;
+                }
+            }
+            Opcode::MOV => {
+                let register_a = instruction.next_u8() as usize;
+                let register_b = instruction.next_register(&self.registers);
+
+                self.registers[register_a] = register_b;
+            }
             _ => {
                 println!("Unrecognized opcode encountered");
                 return false;
@@ -188,12 +218,20 @@ mod tests {
         };
     }
 
+    // misc instructions
     opcode_test!(test_opcode_hlt; vm; [0, 0, 0, 0, 1, 0, 0, 0], vm.pc => 68);
     opcode_test!(test_opcode_igl; vm; [0x3F, 0, 0, 0, 0, 0, 0, 0], vm.pc => 68);
 
+    // load instructions
     opcode_test!(test_opcode_lbi; vm; [4, 0, 255, 255], vm.registers[0] => 0xFF);
     opcode_test!(test_opcode_lbd; vm; [5, 0, 0, 0], vm.registers[0] => 0x45);
     opcode_test!(test_opcode_lhi; vm; [8, 0, 255, 255], vm.registers[0] => 0xFFFF);
     opcode_test!(test_opcode_lhd; vm; [9, 0, 0, 0], vm.registers[0] => 0x4550);
     opcode_test!(test_opcode_lwd; vm; [13, 0, 0, 0], vm.registers[0] => 0x45504945);
+
+    // store/move instructions
+    opcode_test!(test_opcode_sbi; vm; [16, 1, 0, 0], &vm.program[0..4] => [10, 0x50, 0x49, 0x45]);
+    opcode_test!(test_opcode_shi; vm; [20, 1, 0, 0], &vm.program[0..4] => [0, 10, 0x49, 0x45]);
+    opcode_test!(test_opcode_swi; vm; [24, 1, 0, 0], &vm.program[0..4] => [0, 0, 0, 10]);
+    opcode_test!(test_opcode_mov; vm; [30, 0, 1, 0], vm.registers[0] => 10);
 }
