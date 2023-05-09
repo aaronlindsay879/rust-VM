@@ -64,25 +64,25 @@ impl VM {
                 println!("Halting!");
                 return false;
             }
-            Opcode::LBI => {
+            Opcode::LDBI => {
                 let register = instruction.next_u8() as usize;
                 let value = instruction.next_u8() as i32;
 
                 self.registers[register] = value;
             }
-            Opcode::LBD => {
+            Opcode::LDBD => {
                 let register = instruction.next_u8() as usize;
                 let address = instruction.next_u16() as usize;
 
                 self.registers[register] = self.program[address] as i32;
             }
-            Opcode::LHI => {
+            Opcode::LDHI => {
                 let register = instruction.next_u8() as usize;
                 let value = instruction.next_u16() as i32;
 
                 self.registers[register] = value;
             }
-            Opcode::LHD => {
+            Opcode::LDHD => {
                 let register = instruction.next_u8() as usize;
                 let address = instruction.next_u16() as usize;
 
@@ -90,7 +90,7 @@ impl VM {
 
                 self.registers[register] = i16::from_be_bytes(bytes) as i32;
             }
-            Opcode::LWD => {
+            Opcode::LDWD => {
                 let register = instruction.next_u8() as usize;
                 let address = instruction.next_u16() as usize;
 
@@ -103,13 +103,13 @@ impl VM {
 
                 self.registers[register] = i32::from_be_bytes(bytes);
             }
-            Opcode::SBI => {
+            Opcode::STRBI => {
                 let register = instruction.next_register(&self.registers) as u8;
                 let address = instruction.next_u16() as usize;
 
                 self.program[address] = register;
             }
-            Opcode::SHI => {
+            Opcode::STRHI => {
                 let register = instruction.next_register(&self.registers) as u16;
                 let mut address = instruction.next_u16() as usize;
 
@@ -118,7 +118,7 @@ impl VM {
                     address += 1;
                 }
             }
-            Opcode::SWI => {
+            Opcode::STRWI => {
                 let register = instruction.next_register(&self.registers) as u32;
                 let mut address = instruction.next_u16() as usize;
 
@@ -133,46 +133,46 @@ impl VM {
 
                 self.registers[register_a] = register_b;
             }
-            Opcode::ADR => {
+            Opcode::ADDR => {
                 let register_a = instruction.next_u8() as usize;
                 let register_b = instruction.next_register(&self.registers);
                 let register_c = instruction.next_register(&self.registers);
 
                 self.registers[register_a] = register_b + register_c;
             }
-            Opcode::ADI => {
+            Opcode::ADDI => {
                 let register_a = instruction.next_u8() as usize;
                 let value = instruction.next_u16() as i32;
 
                 self.registers[register_a] += value;
             }
-            Opcode::SUR => {
+            Opcode::SUBR => {
                 let register_a = instruction.next_u8() as usize;
                 let register_b = instruction.next_register(&self.registers);
                 let register_c = instruction.next_register(&self.registers);
 
                 self.registers[register_a] = register_b - register_c;
             }
-            Opcode::SUI => {
+            Opcode::SUBI => {
                 let register_a = instruction.next_u8() as usize;
                 let value = instruction.next_u16() as i32;
 
                 self.registers[register_a] -= value;
             }
-            Opcode::MLR => {
+            Opcode::MULR => {
                 let register_a = instruction.next_u8() as usize;
                 let register_b = instruction.next_register(&self.registers);
                 let register_c = instruction.next_register(&self.registers);
 
                 self.registers[register_a] = register_b * register_c;
             }
-            Opcode::MLI => {
+            Opcode::MULI => {
                 let register_a = instruction.next_u8() as usize;
                 let value = instruction.next_u16() as i32;
 
                 self.registers[register_a] *= value;
             }
-            Opcode::DVR => {
+            Opcode::DIVR => {
                 let register_a = instruction.next_u8() as usize;
                 let register_b = instruction.next_register(&self.registers);
                 let register_c = instruction.next_register(&self.registers);
@@ -182,7 +182,7 @@ impl VM {
                 self.registers[register_a] = value;
                 self.remainder = remainder as u32;
             }
-            Opcode::DVI => {
+            Opcode::DIVI => {
                 let register_addr = instruction.next_u8() as usize;
                 let register_value = self.registers[register_addr];
                 let value = instruction.next_u16() as i32;
@@ -282,7 +282,7 @@ mod tests {
     opcode_test!(test_opcode_igl; vm; [0x3F, 0, 0, 0, 0, 0, 0, 0], vm.pc => 68);
 
     // load instructions
-    opcode_test!(test_opcode_lbi; vm; [4, 0, 255, 255], vm.registers[0] => 0xFF);
+    opcode_test!(test_opcode_ldbi; vm; [4, 0, 255, 255], vm.registers[0] => 0xFF);
     opcode_test!(test_opcode_lbd; vm; [5, 0, 0, 0], vm.registers[0] => 0x45);
     opcode_test!(test_opcode_lhi; vm; [8, 0, 255, 255], vm.registers[0] => 0xFFFF);
     opcode_test!(test_opcode_lhd; vm; [9, 0, 0, 0], vm.registers[0] => 0x4550);

@@ -9,39 +9,39 @@ pub enum Opcode {
     /// Halt
     HLT = 0b00000000,
     /// Loads byte value into register
-    LBI = 0b00000100,
+    LDBI = 0b00000100,
     /// Loads value from memory into register
-    LBD = 0b00000101,
+    LDBD = 0b00000101,
     /// Loads half-word value into register
-    LHI = 0b00001000,
+    LDHI = 0b00001000,
     /// Loads half-word from memory into register
-    LHD = 0b00001001,
+    LDHD = 0b00001001,
     /// Loads word from memory into register
-    LWD = 0b00001101,
+    LDWD = 0b00001101,
     /// Stores byte from register into memory with address from raw value
-    SBI = 0b00010000,
+    STRBI = 0b00010000,
     /// Stores half-word from register into memory with address from raw value
-    SHI = 0b00010100,
+    STRHI = 0b00010100,
     /// Stores word from register into memory with address from raw value
-    SWI = 0b00011000,
+    STRWI = 0b00011000,
     /// Copies register value
     MOV = 0b00011110,
     /// Adds two registers
-    ADR = 0b01000010,
+    ADDR = 0b01000010,
     /// Adds a register and a literal
-    ADI = 0b01000000,
+    ADDI = 0b01000000,
     /// Subtracts two registers
-    SUR = 0b01000110,
+    SUBR = 0b01000110,
     /// Subtracts a register and a literal
-    SUI = 0b01000100,
+    SUBI = 0b01000100,
     /// Multiplies two registers
-    MLR = 0b01001010,
+    MULR = 0b01001010,
     /// Multiplies a register and a literal
-    MLI = 0b01001000,
+    MULI = 0b01001000,
     /// Divides two registers
-    DVR = 0b01001110,
+    DIVR = 0b01001110,
     /// Divides a register and a literal
-    DVI = 0b01001100,
+    DIVI = 0b01001100,
     /// Illegal instruction
     IGL = 0b11111111,
 }
@@ -50,23 +50,23 @@ impl From<&str> for Opcode {
     fn from(value: &str) -> Self {
         match &value.to_lowercase()[..] {
             "hlt" => Opcode::HLT,
-            "lbi" => Opcode::LBI,
-            "lbd" => Opcode::LBD,
-            "lhi" => Opcode::LHI,
-            "lhd" => Opcode::LHD,
-            "lwd" => Opcode::LWD,
-            "sbi" => Opcode::SBI,
-            "shi" => Opcode::SHI,
-            "swi" => Opcode::SWI,
+            "ldbi" => Opcode::LDBI,
+            "ldbd" => Opcode::LDBD,
+            "ldhi" => Opcode::LDHI,
+            "ldhd" => Opcode::LDHD,
+            "ldwd" => Opcode::LDWD,
+            "strbi" => Opcode::STRBI,
+            "strhi" => Opcode::STRHI,
+            "strwi" => Opcode::STRWI,
             "mov" => Opcode::MOV,
-            "adr" => Opcode::ADR,
-            "adi" => Opcode::ADI,
-            "sur" => Opcode::SUR,
-            "sui" => Opcode::SUI,
-            "mlr" => Opcode::MLR,
-            "mli" => Opcode::MLI,
-            "dvr" => Opcode::DVR,
-            "dvi" => Opcode::DVI,
+            "addr" => Opcode::ADDR,
+            "addi" => Opcode::ADDI,
+            "subr" => Opcode::SUBR,
+            "subi" => Opcode::SUBI,
+            "mulr" => Opcode::MULR,
+            "muli" => Opcode::MULI,
+            "divr" => Opcode::DIVR,
+            "divi" => Opcode::DIVI,
             _ => Opcode::IGL,
         }
     }
@@ -86,8 +86,8 @@ mod tests {
 
     #[test]
     fn test_str_to_opcode() {
-        let opcode = Opcode::from("lbi");
-        assert_eq!(opcode, Opcode::LBI);
+        let opcode = Opcode::from("ldbi");
+        assert_eq!(opcode, Opcode::LDBI);
 
         let opcode = Opcode::from("illegal");
         assert_eq!(opcode, Opcode::IGL);

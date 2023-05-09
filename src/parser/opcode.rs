@@ -14,8 +14,8 @@ mod tests {
 
     #[test]
     fn test_parse_opcode() {
-        assert_eq!(parse_opcode("lbi"), Ok(("", Opcode::LBI)));
-        assert_eq!(parse_opcode("LBi"), Ok(("", Opcode::LBI)));
+        assert_eq!(parse_opcode("ldbi"), Ok(("", Opcode::LDBI)));
+        assert_eq!(parse_opcode("LdBi"), Ok(("", Opcode::LDBI)));
         assert_eq!(parse_opcode("hlt"), Ok(("", Opcode::HLT)));
 
         assert_eq!(parse_opcode("unknown"), Ok(("", Opcode::IGL)));

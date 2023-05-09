@@ -119,8 +119,8 @@ mod tests {
                                     world: .asciiz 'world!'
                                 .code
                                 loop:
-                                    lbi 2,$0,$0
-                                    lbi @loop"#;
+                                    ldbi 2,$0,$0
+                                    ldbi @loop"#;
 
         let program = Program::parse(&program).unwrap();
 
@@ -141,7 +141,7 @@ mod tests {
                 AssemblerInstruction::new_directive(None, Directive::Code, &[]),
                 AssemblerInstruction::new_opcode(
                     Some("loop"),
-                    Opcode::LBI,
+                    Opcode::LDBI,
                     &[
                         Operand::Value(2),
                         Operand::Register(0),
@@ -150,7 +150,7 @@ mod tests {
                 ),
                 AssemblerInstruction::new_opcode(
                     None,
-                    Opcode::LBI,
+                    Opcode::LDBI,
                     &[Operand::Label("loop".to_owned())]
                 )
             ]

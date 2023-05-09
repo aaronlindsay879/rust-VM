@@ -16,9 +16,9 @@
 ## General comments
 - 6 bit operand
 - 2 bit addressing mode
-  - 00 -> Immediate (raw value)
-  - 01 -> Direct (memory address)
-  - 02 -> Register
+  - 0b00 -> Immediate (raw value)
+  - 0b01 -> Direct (memory address)
+  - 0b10 -> Register
 - 24 bits for various operands
 
 ## Instructions
@@ -29,26 +29,26 @@
 | IGL         | illegal                  | 3F           | IGL      | Illegal instruction |
 
 ### Data transfer
-| instruction | short description        | opcode (hex) | example   | meaning         |
-|-------------|--------------------------|--------------|-----------|-----------------|
-| LBI         | load byte immediate      | 01           | LBI $1,0  | $1 <- 0         |
-| LBD         | load byte direct         | 01           | LBD $1,0  | $1 <- MEM[0]    |
-| LHI         | load half-word immediate | 02           | LHI $1,0  | $1 <- 0         |
-| LHD         | load half-word direct    | 02           | LHD $1,0  | $1 <- MEM[0..2] |
-| LWD         | load word direct         | 03           | LWD $1,0  | $1 <- MEM[0..4] |
-| SBI         | store byte immediate     | 04           | SBI $1,0  | MEM[0] <- $1    |
-| SHI         | store byte immediate     | 05           | SHI $1,0  | MEM[0..2] <- $1 |
-| SWI         | store byte immediate     | 06           | SWI $1,0  | MEM[0..4] <- $1 |
-| MOV         | move register            | 07           | MOV $0,$1 | $0 <- $1        |
+| instruction | short description         | opcode (hex) | example    | meaning         |
+|-------------|---------------------------|--------------|------------|-----------------|
+| LDBI        | load byte immediate       | 01           | LDBI $1,0  | $1 <- 0         |
+| LDBD        | load byte direct          | 01           | LDBD $1,0  | $1 <- MEM[0]    |
+| LDHI        | load half-word immediate  | 02           | LDHI $1,0  | $1 <- 0         |
+| LDHD        | load half-word direct     | 02           | LDHD $1,0  | $1 <- MEM[0..2] |
+| LDWD        | load word direct          | 03           | LDWD $1,0  | $1 <- MEM[0..4] |
+| STRBI       | store byte immediate      | 04           | STRBI $1,0 | MEM[0] <- $1    |
+| STRHI       | store half-word immediate | 05           | STRHI $1,0 | MEM[0..2] <- $1 |
+| STRWI       | store word immediate      | 06           | STRWI $1,0 | MEM[0..4] <- $1 |
+| MOV         | move register             | 07           | MOV $0,$1  | $0 <- $1        |
 
 ### Arithmetic
-| instruction | short description  | opcode (hex) | example      | meaning       |
-|-------------|--------------------|--------------|--------------|---------------|
-| ADR         | add register       | 10           | ADR $1,$2,$3 | $1 <- $2 + 3  |
-| ADI         | add immediate      | 10           | ADI $0,10    | $0 <- $0 + 10 |
-| SUR         | subtract register  | 11           | SUR $1,$2,$3 | $1 <- $2 - 3  |
-| SUI         | subtract immediate | 11           | SUI $0,10    | $0 <- $0 - 10 |
-| MLR         | multiply register  | 12           | MLR $1,$2,$3 | $1 <- $2 * 3  |
-| MLI         | multiply immediate | 12           | MLI $0,10    | $0 <- $0 * 10 |
-| DVR         | divide register    | 13           | DVR $1,$2,$3 | $1 <- $2 / 3  |
-| DVI         | divide immediate   | 13           | DVI $0,10    | $0 <- $0 / 10 |
+| instruction | short description  | opcode (hex) | example       | meaning       |
+|-------------|--------------------|--------------|---------------|---------------|
+| ADDR        | add register       | 10           | ADDR $1,$2,$3 | $1 <- $2 + 3  |
+| ADDI        | add immediate      | 10           | ADDI $0,10    | $0 <- $0 + 10 |
+| SUBR        | subtract register  | 11           | SUBR $1,$2,$3 | $1 <- $2 - 3  |
+| SUBI        | subtract immediate | 11           | SUBI $0,10    | $0 <- $0 - 10 |
+| MULR        | multiply register  | 12           | MULR $1,$2,$3 | $1 <- $2 * 3  |
+| MULI        | multiply immediate | 12           | MULI $0,10    | $0 <- $0 * 10 |
+| DIVR        | divide register    | 13           | DIVR $1,$2,$3 | $1 <- $2 / 3  |
+| DIVI        | divide immediate   | 13           | DIVI $0,10    | $0 <- $0 / 10 |
