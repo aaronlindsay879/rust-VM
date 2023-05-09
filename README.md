@@ -52,3 +52,21 @@
 | MULI        | multiply immediate | 12           | MULI $0,10    | $0 <- $0 * 10 |
 | DIVR        | divide register    | 13           | DIVR $1,$2,$3 | $1 <- $2 / 3  |
 | DIVI        | divide immediate   | 13           | DIVI $0,10    | $0 <- $0 / 10 |
+
+### Comparisons
+All results are stored in special equality register
+
+| instruction | short description            | opcode (hex) | example    | meaning  |
+|-------------|------------------------------|--------------|------------|----------|
+| EQI         | equal immediate              | 20           | EQI $0,10  | $0 == 10 |
+| EQR         | equal register               | 20           | EQR $1,$2  | $1 == $2 |
+| NEQI        | not equal immediate          | 21           | NEQI $0,10 | $0 != 10 |
+| NEQR        | not equal register           | 21           | NEQR $1,$2 | $1 != $2 |
+| GTI         | greater than immediate       | 22           | GTI $0,10  | $0 > 10  |
+| GTR         | greater than register        | 22           | GTR $1,$2  | $1 > $2  |
+| GTEI        | greater than equal immediate | 23           | GTEI $0,10 | $0 >= 10 |
+| GTER        | greater than equal register  | 23           | GTER $1,$2 | $1 >= $2 |
+| LTI         | less than immediate          | 24           | LTI $0,10  | $0 < 10  |
+| LTR         | less than register           | 24           | LTR $1,$2  | $1 < $2  |
+| LTEI        | less than equal immediate    | 25           | LTEI $0,10 | $0 <= 10 |
+| LTER        | less than equal register     | 25           | LTER $1,$2 | $1 <= $2 |

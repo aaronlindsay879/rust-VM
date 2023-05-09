@@ -42,6 +42,30 @@ pub enum Opcode {
     DIVR = 0b01001110,
     /// Divides a register and a literal
     DIVI = 0b01001100,
+    /// Checks for equality between a register and a literal
+    EQI = 0b10000000,
+    /// Checks for equality between two registers
+    EQR = 0b10000010,
+    /// Checks for inequality between a register and a literal
+    NEQI = 0b10000100,
+    /// Checks for inequality between two registers
+    NEQR = 0b10000110,
+    /// Checks if one register is greater than a literal
+    GTI = 0b10001000,
+    /// Checks if one register is greater than another
+    GTR = 0b10001010,
+    /// Checks if one register is greater than or equal to a literal
+    GTEI = 0b10001100,
+    /// Checks if one register is greater than or equal to another
+    GTER = 0b10001110,
+    /// Checks if one register is less than a literal
+    LTI = 0b10010000,
+    /// Checks if one register is less than another
+    LTR = 0b10010010,
+    /// Checks if one register is less than or equal to a literal
+    LTEI = 0b10010100,
+    /// Checks if one register is less than or equal to another
+    LTER = 0b10010110,
     /// Illegal instruction
     IGL = 0b11111111,
 }
@@ -67,6 +91,18 @@ impl From<&str> for Opcode {
             "muli" => Opcode::MULI,
             "divr" => Opcode::DIVR,
             "divi" => Opcode::DIVI,
+            "eqi" => Opcode::EQI,
+            "eqr" => Opcode::EQR,
+            "neqi" => Opcode::NEQI,
+            "neqr" => Opcode::NEQR,
+            "gti" => Opcode::GTI,
+            "gtr" => Opcode::GTR,
+            "gtei" => Opcode::GTEI,
+            "gter" => Opcode::GTER,
+            "lti" => Opcode::LTI,
+            "ltr" => Opcode::LTR,
+            "ltei" => Opcode::LTEI,
+            "lter" => Opcode::LTER,
             _ => Opcode::IGL,
         }
     }

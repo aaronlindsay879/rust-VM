@@ -192,6 +192,79 @@ impl VM {
                 self.registers[register_addr] = value;
                 self.remainder = remainder as u32;
             }
+            Opcode::EQI => {
+                let register = instruction.next_register(&self.registers);
+                let value = instruction.next_u16();
+
+                self.equality_flag = register == value as i32;
+            }
+            Opcode::EQR => {
+                let register_a = instruction.next_register(&self.registers);
+                let register_b = instruction.next_register(&self.registers);
+
+                self.equality_flag = register_a == register_b;
+            }
+            Opcode::NEQI => {
+                let register = instruction.next_register(&self.registers);
+                let value = instruction.next_u16();
+
+                self.equality_flag = register != value as i32;
+            }
+            Opcode::NEQR => {
+                let register_a = instruction.next_register(&self.registers);
+                let register_b = instruction.next_register(&self.registers);
+
+                self.equality_flag = register_a != register_b;
+            }
+            Opcode::GTI => {
+                let register = instruction.next_register(&self.registers);
+                let value = instruction.next_u16();
+
+                self.equality_flag = register > value as i32;
+            }
+            Opcode::GTR => {
+                let register_a = instruction.next_register(&self.registers);
+                let register_b = instruction.next_register(&self.registers);
+
+                self.equality_flag = register_a > register_b;
+            }
+            Opcode::GTEI => {
+                let register = instruction.next_register(&self.registers);
+                let value = instruction.next_u16();
+
+                self.equality_flag = register >= value as i32;
+            }
+            Opcode::GTER => {
+                let register_a = instruction.next_register(&self.registers);
+                let register_b = instruction.next_register(&self.registers);
+
+                self.equality_flag = register_a >= register_b;
+            }
+            Opcode::LTI => {
+                let register = instruction.next_register(&self.registers);
+                let value = instruction.next_u16();
+
+                self.equality_flag = register < value as i32;
+            }
+            Opcode::LTR => {
+                let register_a = instruction.next_register(&self.registers);
+                let register_b = instruction.next_register(&self.registers);
+
+                self.equality_flag = register_a < register_b;
+            }
+            Opcode::LTEI => {
+                let register = instruction.next_register(&self.registers);
+                let value = instruction.next_u16();
+
+                self.equality_flag = register <= value as i32;
+            }
+            Opcode::LTER => {
+                let register_a = instruction.next_register(&self.registers);
+                let register_b = instruction.next_register(&self.registers);
+
+                self.equality_flag = register_a <= register_b;
+            }
+
             _ => {
                 println!("Unrecognized opcode encountered");
                 return false;
@@ -303,4 +376,20 @@ mod tests {
     opcode_test!(test_opcode_mli; vm; [72, 0, 0, 4], vm.registers[0] => 20);
     opcode_test!(test_opcode_dvr; vm; [78, 2, 1, 0], vm.registers[2] => 2, vm.remainder => 0);
     opcode_test!(test_opcode_dvi; vm; [76, 0, 0, 4], vm.registers[0] => 1, vm.remainder => 1);
+
+    // comparison instructions
+    opcode_test!(test_opcode_eqi; vm; [128, 0, 0, 5], vm.equality_flag => true);
+    opcode_test!(test_opcode_eqr; vm; [130, 0, 1, 0], vm.equality_flag => false);
+    opcode_test!(test_opcode_neqi; vm; [132, 0, 0, 5], vm.equality_flag => false);
+    opcode_test!(test_opcode_neqr; vm; [134, 0, 1, 0], vm.equality_flag => true);
+
+    opcode_test!(test_opcode_gti; vm; [136, 0, 0, 1], vm.equality_flag => true);
+    opcode_test!(test_opcode_gtr; vm; [138, 1, 0, 0], vm.equality_flag => true);
+    opcode_test!(test_opcode_gtei; vm; [140, 0, 0, 5], vm.equality_flag => true);
+    opcode_test!(test_opcode_gter; vm; [142, 1, 0, 0], vm.equality_flag => true);
+
+    opcode_test!(test_opcode_lti; vm; [144, 0, 0, 1], vm.equality_flag => false);
+    opcode_test!(test_opcode_ltr; vm; [146, 0, 1, 0], vm.equality_flag => true);
+    opcode_test!(test_opcode_ltei; vm; [148, 0, 0, 5], vm.equality_flag => true);
+    opcode_test!(test_opcode_lter; vm; [150, 1, 0, 0], vm.equality_flag => false);
 }
