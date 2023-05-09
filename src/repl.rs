@@ -16,6 +16,10 @@ pub struct REPL {
 }
 
 impl REPL {
+    pub fn set_vm(&mut self, vm: VM) {
+        self.vm = vm;
+    }
+
     /// Starts interactive REPL session
     pub fn run(&mut self) {
         // buffer for user command
@@ -116,7 +120,7 @@ impl REPL {
 
 /// Pretty prints array of types that can be represented in hex
 /// Size is how much to pad each hex value
-fn pretty_print_hex<T: UpperHex>(bytes: &[T], size: usize) {
+pub(crate) fn pretty_print_hex<T: UpperHex>(bytes: &[T], size: usize) {
     let byte_chunks = bytes.chunks(4).collect::<Vec<_>>();
 
     for line in byte_chunks.chunks(2) {
