@@ -1,5 +1,7 @@
 .data
-secret: .word 0x706f6700
 .code
-    subi $0,1
-    strbi $0,0
+loop:   addi $0,2
+        addi $1,1
+        eqi $1,5
+        jmpnei @loop
+        hlt

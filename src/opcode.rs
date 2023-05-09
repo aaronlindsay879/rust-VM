@@ -66,6 +66,24 @@ pub enum Opcode {
     LTEI = 0b10010100,
     /// Checks if one register is less than or equal to another
     LTER = 0b10010110,
+    /// Jumps to literal location
+    JMPI = 0b10100000,
+    /// Jumps to location read from memory
+    JMPD = 0b10100001,
+    /// Jumps to location read from register
+    JMPR = 0b10100010,
+    /// Jumps to literal location if equality register true
+    JMPEI = 0b10100100,
+    /// Jumps to location read from memory if equality register true
+    JMPED = 0b10100101,
+    /// Jumps to location read from register if equality register true
+    JMPER = 0b10100110,
+    /// Jumps to literal location if equality register false
+    JMPNEI = 0b10101000,
+    /// Jumps to location read from memory if equality register false
+    JMPNED = 0b10101001,
+    /// Jumps to location read from register if equality register false
+    JMPNER = 0b10101010,
     /// Illegal instruction
     IGL = 0b11111111,
 }
@@ -103,6 +121,15 @@ impl From<&str> for Opcode {
             "ltr" => Opcode::LTR,
             "ltei" => Opcode::LTEI,
             "lter" => Opcode::LTER,
+            "jmpi" => Opcode::JMPI,
+            "jmpd" => Opcode::JMPD,
+            "jmpr" => Opcode::JMPR,
+            "jmpei" => Opcode::JMPEI,
+            "jmped" => Opcode::JMPED,
+            "jmper" => Opcode::JMPER,
+            "jmpnei" => Opcode::JMPNEI,
+            "jmpned" => Opcode::JMPNED,
+            "jmpner" => Opcode::JMPNER,
             _ => Opcode::IGL,
         }
     }

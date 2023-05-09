@@ -260,17 +260,17 @@ mod tests {
                                     hello: .ascii 'Hell'
                                     world: .asciiz 'world!'
                                 .code
-                                    inc $5
+                                    addi $5,1
                                     loop:
-                                    inc $5
-                                    djmp @loop"#;
+                                    addi $5,1
+                                    jmpi @loop"#;
         let expected_header = [
             69, 80, 73, 69, 0, 0, 0, 0, 0, 0, 0, 64, 0, 0, 0, 12, 0, 0, 0, 76, 0, 0, 0, 12, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         let expected_data = [72, 101, 108, 108, 119, 111, 114, 108, 100, 33, 0, 0];
-        let expected_code = [19, 5, 0, 0, 19, 5, 0, 0, 21, 0, 80, 0];
+        let expected_code = [64, 5, 0, 1, 64, 5, 0, 1, 160, 0, 80, 0];
 
         let expected: Vec<u8> = expected_header
             .into_iter()

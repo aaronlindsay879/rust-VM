@@ -264,7 +264,69 @@ impl VM {
 
                 self.equality_flag = register_a <= register_b;
             }
+            Opcode::JMPI => {
+                self.pc = instruction.next_u16() as usize;
+            }
+            Opcode::JMPD => {
+                let address = instruction.next_u16() as usize;
+                let bytes = [
+                    self.program[address],
+                    self.program[address + 1],
+                    self.program[address + 2],
+                    self.program[address + 3],
+                ];
 
+                self.pc = u32::from_be_bytes(bytes) as usize;
+            }
+            Opcode::JMPR => {
+                self.pc = instruction.next_register(&self.registers) as usize;
+            }
+            Opcode::JMPEI => {
+                if self.equality_flag {
+                    self.pc = instruction.next_u16() as usize;
+                }
+            }
+            Opcode::JMPED => {
+                if self.equality_flag {
+                    let address = instruction.next_u16() as usize;
+                    let bytes = [
+                        self.program[address],
+                        self.program[address + 1],
+                        self.program[address + 2],
+                        self.program[address + 3],
+                    ];
+
+                    self.pc = u32::from_be_bytes(bytes) as usize;
+                }
+            }
+            Opcode::JMPER => {
+                if self.equality_flag {
+                    self.pc = instruction.next_register(&self.registers) as usize;
+                }
+            }
+            Opcode::JMPNEI => {
+                if !self.equality_flag {
+                    self.pc = instruction.next_u16() as usize;
+                }
+            }
+            Opcode::JMPNED => {
+                if !self.equality_flag {
+                    let address = instruction.next_u16() as usize;
+                    let bytes = [
+                        self.program[address],
+                        self.program[address + 1],
+                        self.program[address + 2],
+                        self.program[address + 3],
+                    ];
+
+                    self.pc = u32::from_be_bytes(bytes) as usize;
+                }
+            }
+            Opcode::JMPNER => {
+                if !self.equality_flag {
+                    self.pc = instruction.next_register(&self.registers) as usize;
+                }
+            }
             _ => {
                 println!("Unrecognized opcode encountered");
                 return false;
@@ -336,15 +398,24 @@ mod tests {
     }
 
     macro_rules! opcode_test {
-        ($name:ident; $vm_name:ident; [$( $program:expr ),*], $($test_left:expr => $test_right:expr),*) => {
+        (
+            $name:ident; $vm_name:ident;
+            [$( $program:expr ),*],
+            $($test_left:expr => $test_right:expr),*
+            $(; $($prep_left:expr => $prep_right:expr),*)?
+        ) => {
             #[test]
             fn $name() {
                 let mut $vm_name = get_test_vm(vec![$($program),*]);
                 prepend_header(&mut $vm_name);
+                $($(
+                    $prep_left = $prep_right;
+                )?);*
+
                 $vm_name.run();
 
                 $(
-                    assert_eq!($test_left, $test_right);
+                    assert_eq!($test_left, $test_right)
                 );*
             }
         };
@@ -392,4 +463,23 @@ mod tests {
     opcode_test!(test_opcode_ltr; vm; [146, 0, 1, 0], vm.equality_flag => true);
     opcode_test!(test_opcode_ltei; vm; [148, 0, 0, 5], vm.equality_flag => true);
     opcode_test!(test_opcode_lter; vm; [150, 1, 0, 0], vm.equality_flag => false);
+
+    // jump instructions
+    opcode_test!(test_opcode_jmpi; vm; [160, 1, 0, 0], vm.pc => 256);
+    opcode_test!(test_opcode_jmpd; vm; [161, 0, 0, 0], vm.pc => u32::from_be_bytes(PIE_HEADER_PREFIX) as usize);
+    opcode_test!(test_opcode_jmpr; vm; [8, 1, 1, 0, 162, 1, 0, 0], vm.pc => 256);
+
+    opcode_test!(test_opcode_jmpei_a; vm; [164, 1, 0, 0], vm.pc => 68; vm.equality_flag => false);
+    opcode_test!(test_opcode_jmpei_b; vm; [164, 1, 0, 0], vm.pc => 256; vm.equality_flag => true);
+    opcode_test!(test_opcode_jmped_a; vm; [165, 0, 0, 0], vm.pc => 68; vm.equality_flag => false);
+    opcode_test!(test_opcode_jmped_b; vm; [165, 0, 0, 0], vm.pc => u32::from_be_bytes(PIE_HEADER_PREFIX) as usize; vm.equality_flag => true);
+    opcode_test!(test_opcode_jmper_a; vm; [8, 1, 1, 0, 166, 1, 0, 0], vm.pc => 72; vm.equality_flag => false);
+    opcode_test!(test_opcode_jmper_b; vm; [8, 1, 1, 0, 166, 1, 0, 0], vm.pc => 256; vm.equality_flag => true);
+
+    opcode_test!(test_opcode_jmpnei_a; vm; [168, 1, 0, 0], vm.pc => 68; vm.equality_flag => true);
+    opcode_test!(test_opcode_jmpnei_b; vm; [168, 1, 0, 0], vm.pc => 256; vm.equality_flag => false);
+    opcode_test!(test_opcode_jmpned_a; vm; [169, 0, 0, 0], vm.pc => 68; vm.equality_flag => true);
+    opcode_test!(test_opcode_jmpned_b; vm; [169, 0, 0, 0], vm.pc => u32::from_be_bytes(PIE_HEADER_PREFIX) as usize; vm.equality_flag => false);
+    opcode_test!(test_opcode_jmpner_a; vm; [8, 1, 1, 0, 170, 1, 0, 0], vm.pc => 72; vm.equality_flag => true);
+    opcode_test!(test_opcode_jmpner_b; vm; [8, 1, 1, 0, 170, 1, 0, 0], vm.pc => 256; vm.equality_flag => false);
 }

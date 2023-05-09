@@ -70,3 +70,16 @@ All results are stored in special equality register
 | LTR         | less than register           | 24           | LTR $1,$2  | $1 < $2  |
 | LTEI        | less than equal immediate    | 25           | LTEI $0,10 | $0 <= 10 |
 | LTER        | less than equal register     | 25           | LTER $1,$2 | $1 <= $2 |
+
+### Jumps
+| instruction | short description           | opcode (hex) | example   | meaning                                  |
+|-------------|-----------------------------|--------------|-----------|------------------------------------------|
+| JMPI        | jump immediate              | 28           | JMPI 12   | pc <- 10                                 |
+| JMPD        | jump direct                 | 28           | JMPD 10   | pc <- MEM[10..14]                        |
+| JMPR        | jump register               | 28           | JMPR $0   | pc <- $0                                 |
+| JMPEI       | jump if equal immediate     | 29           | JMPEI 12  | if equality_register: pc <- 10           |
+| JMPED       | jump if equal direct        | 29           | JMPED 10  | if equality_register: pc <- MEM[10..14]  |
+| JMPER       | jump if equal register      | 29           | JMPER $0  | if equality_register: pc <- $0           |
+| JMPNEI      | jump if not equal immediate | 2A           | JMPNEI 12 | if !equality_register: pc <- 10          |
+| JMPNED      | jump if not equal direct    | 2A           | JMPNED 10 | if !equality_register: pc <- MEM[10..14] |
+| JMPNER      | jump if not equal register  | 2A           | JMPNER $0 | if !equality_register: pc <- $0          |
