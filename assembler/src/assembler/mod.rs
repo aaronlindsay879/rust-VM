@@ -165,7 +165,25 @@ impl Assembler {
                                     buf.extend_from_slice(&offset.to_be_bytes())
                                 }
                             },
-                            Operand::String(_) => return Err(AssemblerError::IncorrectOperand),
+                            Operand::String(string) => {
+                                // if more than two bytes, we can't use it
+                                if string.len() > 2 {
+                                    return Err(AssemblerError::IncorrectOperand);
+                                }
+
+                                // otherwise get the first two bytes (not _technically_ UTF8 compatible
+                                // but we're only using this to cleanly represent some bytes)
+                                let mut bytes = string.bytes().take(2).collect::<Vec<_>>();
+
+                                // bytes is definitely 2 or fewer bytes because of condition above,
+                                // so just pad if needed and then reverse for correct endianness
+                                bytes.resize(2, 0);
+                                bytes.reverse();
+
+                                dbg!(&bytes);
+
+                                buf.extend_from_slice(&bytes);
+                            }
                         }
                     }
 
