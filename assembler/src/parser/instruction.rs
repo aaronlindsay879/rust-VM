@@ -1,4 +1,3 @@
-use crate::opcode::Opcode;
 use crate::parser::comment::parse_comment;
 use crate::parser::directive::{parse_directive, Directive};
 use crate::parser::label_declaration::parse_label_declaration;
@@ -10,6 +9,7 @@ use nom::combinator::{map, opt};
 use nom::multi::many0;
 use nom::sequence::{delimited, tuple};
 use nom::IResult;
+use shared::Opcode;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum AssemblerInstruction {

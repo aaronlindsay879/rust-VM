@@ -1,17 +1,12 @@
-mod assembler;
-mod instruction;
-mod opcode;
-mod parser;
 mod repl;
-mod vm;
 
-use crate::assembler::Assembler;
-use crate::repl::REPL;
-use crate::vm::VM;
+use assembler::Assembler;
 use clap::{Parser, Subcommand};
+use repl::REPL;
 use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
+use vm::VM;
 
 const PIE_HEADER_PREFIX: [u8; 4] = *b"EPIE";
 const PIE_HEADER_LENGTH: usize = 64;

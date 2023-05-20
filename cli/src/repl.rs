@@ -1,12 +1,11 @@
-//use crate::assembler::Assembler;
-use crate::assembler::Assembler;
-use crate::vm::VM;
+use assembler::Assembler;
 use std::fmt::UpperHex;
 use std::fs::File;
 use std::io;
 use std::io::{Read, Write};
 use std::num::ParseIntError;
 use std::path::Path;
+use vm::VM;
 
 #[derive(Default)]
 #[allow(clippy::upper_case_acronyms)]

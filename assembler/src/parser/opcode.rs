@@ -1,7 +1,7 @@
-use crate::opcode::Opcode;
 use nom::character::complete::alpha1;
 use nom::combinator::map;
 use nom::IResult;
+use shared::Opcode;
 
 /// Parses an opcode, such as LOAD
 pub(super) fn parse_opcode(input: &str) -> IResult<&str, Opcode> {

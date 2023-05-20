@@ -1,5 +1,5 @@
-use crate::opcode::Opcode;
 use num_traits::cast::FromPrimitive;
+use shared::Opcode;
 use std::collections::VecDeque;
 
 /// Entire instruction for VM

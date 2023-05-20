@@ -12,7 +12,7 @@ use crate::parser::directive::Directive;
 use crate::parser::instruction::{AssemblerInstruction, DirectiveInstruction, OpcodeInstruction};
 use crate::parser::operand::Operand;
 use crate::parser::Program;
-use crate::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
+use shared::{PIE_HEADER_LENGTH, PIE_HEADER_PREFIX};
 
 mod errors;
 mod section;

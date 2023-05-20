@@ -89,10 +89,10 @@ fn parse_number(input: &str) -> IResult<&str, i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::opcode::Opcode;
     use crate::parser::directive::Directive;
     use crate::parser::operand::Operand;
     use crate::parser::operand::Operand::String;
+    use shared::Opcode;
 
     #[test]
     fn test_parse_number() {

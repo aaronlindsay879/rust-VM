@@ -1,24 +1,22 @@
 use crate::instruction::Instruction;
-use crate::opcode::Opcode;
-use crate::PIE_HEADER_PREFIX;
+use shared::Opcode;
+use shared::PIE_HEADER_PREFIX;
 
 /// Main virtual machine
 #[derive(Default)]
 pub struct VM {
     /// CPU Registers
-    pub(crate) registers: [i32; 32],
+    pub registers: [i32; 32],
     /// Program counter - current byte being executed
     pc: usize,
     /// Program to be executed
-    pub(crate) program: Vec<u8>,
+    pub program: Vec<u8>,
     /// Start of bytecode section
     code_section_start: usize,
     /// Remainder from previous instruction
     remainder: u32,
     /// Equality from last comparison instruction
-    pub(crate) equality_flag: bool,
-    /// Heap memory
-    heap: Vec<u8>,
+    pub equality_flag: bool,
 }
 
 impl VM {
@@ -421,7 +419,7 @@ impl VM {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::PIE_HEADER_LENGTH;
+    use shared::PIE_HEADER_LENGTH;
 
     fn get_test_vm(program: Vec<u8>) -> VM {
         let mut registers = [0; 32];
