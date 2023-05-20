@@ -22,6 +22,14 @@ y
 z
 Halting!
 ```
+
+# Crates
+This project is organised as a workspace with the following crates: 
+* [shared](shared): Contains shared definitions, such as header constants and opcodes
+* [assembler](assembler): Handles assembling an assembly file into bytecode
+* [vm](vm): The virtual machine itself
+* [cli](cli): Implements a barebones cli for example usage
+
 # Directives 
 
 | directive name      | action                                                                                                      |
